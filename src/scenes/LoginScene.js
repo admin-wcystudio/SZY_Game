@@ -9,8 +9,7 @@ export class LoginScene extends Phaser.Scene {
 
     preload() {
 
-        //login page
-        const loginPath = 'assets/Login/';
+        const loginPath = 'assets/images/Login/';
         this.load.video('login_bg_video', loginPath + 'choosepage_bg.mp4');
 
         this.load.image('login_boy_btn', loginPath + 'choosepage_boy_button.png');
@@ -39,6 +38,8 @@ export class LoginScene extends Phaser.Scene {
             { frameWidth: 350, frameHeight: 450 });
         this.load.spritesheet('girl_transition', loginPath + 'choosepage_girl_galaxytochinese_transition.png',
             { frameWidth: 350, frameHeight: 450 });
+
+        this.load.video('transition', loginPath + 'Transition.webm');
     }
 
     create() {
@@ -251,7 +252,6 @@ export class LoginScene extends Phaser.Scene {
         });
 
 
-        // NPC Animations are now created in MainStreetScene
     }
 
 }

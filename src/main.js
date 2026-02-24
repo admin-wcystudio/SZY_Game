@@ -1,5 +1,7 @@
 import { GameStartScene } from './scenes/GameStartScene.js';
 import { BootScene } from './scenes/BootScene.js';
+import { LoginScene } from './scenes/LoginScene.js';
+import { TransitionScene } from './scenes/TransitionScene.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -13,7 +15,9 @@ const config = {
     pixelArt: false,
     scene: [
         BootScene,
-        GameStartScene
+        GameStartScene,
+        LoginScene,
+        TransitionScene
     ],
     scale: {
         mode: Phaser.Scale.FIT,
