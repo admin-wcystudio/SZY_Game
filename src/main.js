@@ -1,0 +1,24 @@
+import { GameStartScene } from './scenes/GameStartScene.js';
+import { BootScene } from './scenes/BootScene.js';
+
+const config = {
+    type: Phaser.AUTO,
+    title: 'Overlord Rising',
+    description: '',
+    parent: 'game-container',
+    width: 1920,
+    height: 1080,
+    backgroundColor: '#000000',
+    preseveDrawingBuffer: true,
+    pixelArt: false,
+    scene: [
+        BootScene,
+        GameStartScene
+    ],
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+}
+
+new Phaser.Game(config);
