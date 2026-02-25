@@ -74,10 +74,11 @@ export class CustomPanel extends BasePanel {
         this.contentImage = this.bg;
 
         // Standardized Buttons
-        this.prevBtn = new CustomButton(scene, -570, 260, 'prev_button', 'prev_button_click', () => this.changePage(-1).setScrollFactor(0));
-        this.nextBtn = new CustomButton(scene, 570, 260, 'next_button', 'next_button_click', () => this.changePage(1).setScrollFactor(0));
-        this.closeBtn = new CustomButton(scene, 625, -295, 'close_button', 'close_button_click', () => this.hide().setScrollFactor(0));
+        this.prevBtn = new CustomButton(scene, -570, 260, 'prev_button', 'prev_button_click', () => this.changePage(-1));
+        this.nextBtn = new CustomButton(scene, 570, 260, 'next_button', 'next_button_click', () => this.changePage(1));
+        this.closeBtn = new CustomButton(scene, 625, -295, 'close_button', 'close_button_click', () => this.hide());
 
+        this.closeBtn.setScrollFactor(0);
         this.add([this.prevBtn, this.nextBtn, this.closeBtn]);
         this.refresh();
     }
@@ -229,38 +230,29 @@ export class ItemsPanel extends Phaser.GameObjects.Container {
             {
                 itemKey: 'itempage_item1',
                 itemSelectKey: 'itempage_item1_select',
-                itemDescriptionKey: 'itempage_item1_description'
+                itemDescriptionKey: 'game1_object_description'
             },
             {
                 itemKey: 'itempage_item4',
                 itemSelectKey: 'itempage_item4_select',
-                itemDescriptionKey: 'itempage_item4_description',
-                itemDescriptionKey1: 'itempage_item4_description1',
-                itemDescriptionKey2: 'itempage_item4_description2'
+                itemDescriptionKey: 'game4_object_description'
             },
 
             {
                 itemKey: 'itempage_item3',
                 itemSelectKey: 'itempage_item3_select',
-                itemDescriptionKey: 'itempage_item3_description'
+                itemDescriptionKey: 'game3_object_description'
             },
             {
                 itemKey: 'itempage_item2',
                 itemSelectKey: 'itempage_item2_select',
-                itemDescriptionKey: 'itempage_item2_description1',
-                itemDescriptionKey1: 'itempage_item2_description2'
-            },
-
-            {
-                itemKey: 'itempage_item5',
-                itemSelectKey: 'itempage_item5_select',
-                itemDescriptionKey: 'itempage_item5_description'
+                itemDescriptionKey: 'game2_object_description'
             }
         ];
 
         // 1. 背景層
         this.bg = scene.add.image(0, 0, 'itempage_bg').setDepth(1).setScrollFactor(0);
-        this.panelBg = scene.add.image(0, 0, 'panel_bg').setDepth(2).setScrollFactor(0);
+        this.panelBg = scene.add.image(0, 0, 'itempage_panel_bg').setDepth(2).setScrollFactor(0);
         this.add([this.bg, this.panelBg]);
 
         // Get game results from localStorage
@@ -325,6 +317,8 @@ export class ItemsPanel extends Phaser.GameObjects.Container {
             if (this.toggleBtn) this.toggleBtn.resetStatus(); // 讓外部按鈕彈回
         }).setScrollFactor(0);
         this.add(this.closeBtn);
+
+        this.setVisible(false);
 
         scene.add.existing(this);
     }

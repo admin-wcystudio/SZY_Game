@@ -97,6 +97,7 @@ export default class UIHelper {
 
         this.#managePanels(panels, buttons);
 
+
         // Round/Life Icons logic
         const roundStates = [];
         for (let i = 0; i < targetRounds; i++) {
