@@ -2,6 +2,7 @@ import { GameStartScene } from './scenes/GameStartScene.js';
 import { BootScene } from './scenes/BootScene.js';
 import { LoginScene } from './scenes/LoginScene.js';
 import { TransitionScene } from './scenes/TransitionScene.js';
+import { MainStreetScene } from './scenes/MainStreetScene.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -17,7 +18,8 @@ const config = {
         BootScene,
         GameStartScene,
         LoginScene,
-        TransitionScene
+        TransitionScene,
+        MainStreetScene
     ],
     scale: {
         mode: Phaser.Scale.FIT,
