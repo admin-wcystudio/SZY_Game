@@ -58,6 +58,39 @@ export class BootScene extends Phaser.Scene {
         this.load.image('save_btn', 'assets/images/Settings/setting_page_save.png');
         this.load.image('save_btn_click', 'assets/images/Settings/setting_page_save_click.png');
 
+        //items page
+        const itemsPath = 'assets/images/Items/';
+
+        // dynamically load all known item assets
+        const itemKeys = [
+            'itempage_item1',
+            'itempage_item1_select',
+            'itempage_item1_description',
+            'itempage_item2_select',
+            'itempage_item2_description1',
+            'itempage_item2_description2',
+            'itempage_item3',
+            'itempage_item3_select',
+            'itempage_item3_description',
+            'itempage_item4',
+            'itempage_item4_select',
+            'itempage_item4_description',
+            'itempage_item4_description1',
+            'itempage_item4_description2',
+            'itempage_item5',
+            'itempage_item5_select',
+            'itempage_item5_description',
+            'itempage_item_box',
+            'itempage_bg',
+            'panel_bg',
+            'itempage_close_button',
+            'itempage_close_button_select'
+        ];
+        itemKeys.forEach(key => {
+            this.load.image(key, `${itemsPath}${key}.png`);
+        });
+
+
     }
 
     create() {

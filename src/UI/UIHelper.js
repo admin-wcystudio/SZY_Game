@@ -55,16 +55,16 @@ export default class UIHelper {
 
         // 1. Initialize Panels
         const panels = [
-            new SettingPanel(scene, 960, 540).setDepth(baseDepth),
-            new CustomPanel(scene, 960, 540, descriptionPages).setDepth(baseDepth),
-            new CustomPanel(scene, 960, 540, programPages).setDepth(baseDepth)
+            new SettingPanel(scene, 960, 540).setDepth(baseDepth).setScrollFactor(0),
+            new CustomPanel(scene, 960, 540, descriptionPages).setDepth(baseDepth).setScrollFactor(0),
+            new CustomPanel(scene, 960, 540, programPages).setDepth(baseDepth).setScrollFactor(0)
         ];
 
         // 2. Initialize Buttons
         const buttons = [
-            new CustomButton(scene, 100, 100, 'setting_btn', 'setting_btn_click').setDepth(this.DEPTH.BUTTONS),
-            new CustomButton(scene, 250, 100, 'desc_button', 'desc_button_click').setDepth(this.DEPTH.BUTTONS),
-            new CustomButton(scene, 400, 100, 'program_btn', 'program_btn_click').setDepth(this.DEPTH.BUTTONS)
+            new CustomButton(scene, 100, 100, 'setting_btn', 'setting_btn_click').setDepth(this.DEPTH.BUTTONS).setScrollFactor(0),
+            new CustomButton(scene, 250, 100, 'desc_button', 'desc_button_click').setDepth(this.DEPTH.BUTTONS).setScrollFactor(0),
+            new CustomButton(scene, 400, 100, 'program_btn', 'program_btn_click').setDepth(this.DEPTH.BUTTONS).setScrollFactor(0)
         ];
 
         // 3. Apply Management Logic
@@ -84,15 +84,15 @@ export default class UIHelper {
 
         // UI Setup
         const panels = [
-            new SettingPanel(scene, 960, 540).setDepth(this.DEPTH.PANELS),
-            new CustomPanel(scene, 960, 540, descriptionPages).setDepth(this.DEPTH.PANELS),
-            new ItemsPanel(scene, 960, 540).setDepth(this.DEPTH.PANELS)
+            new SettingPanel(scene, 960, 540).setDepth(this.DEPTH.PANELS).setScrollFactor(0),
+            new CustomPanel(scene, 960, 540, descriptionPages).setDepth(this.DEPTH.PANELS).setScrollFactor(0),
+            new ItemsPanel(scene, 960, 540).setDepth(this.DEPTH.PANELS).setScrollFactor(0)
         ];
 
         const buttons = [
-            new CustomButton(scene, 100, 100, 'setting_btn', 'setting_btn_click').setDepth(this.DEPTH.BUTTONS),
-            new CustomButton(scene, 250, 100, 'desc_button', 'desc_button_click').setDepth(this.DEPTH.BUTTONS),
-            new CustomButton(scene, 400, 100, 'gameintro_bag', 'gameintro_bag_click').setDepth(this.DEPTH.BUTTONS)
+            new CustomButton(scene, 100, 100, 'setting_btn', 'setting_btn_click').setDepth(this.DEPTH.BUTTONS).setScrollFactor(0),
+            new CustomButton(scene, 250, 100, 'desc_button', 'desc_button_click').setDepth(this.DEPTH.BUTTONS).setScrollFactor(0),
+            new CustomButton(scene, 400, 100, 'gameintro_bag', 'gameintro_bag_click').setDepth(this.DEPTH.BUTTONS).setScrollFactor(0)
         ];
 
         this.#managePanels(panels, buttons);
@@ -117,7 +117,7 @@ export default class UIHelper {
             color: color,
             backgroundColor: '#000000',
             padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setDepth(this.DEPTH.TOAST).setScrollFactor(0);
+        }).setOrigin(0.5).setDepth(this.DEPTH.TOAST);
 
         scene.tweens.add({
             targets: toast,
@@ -130,12 +130,12 @@ export default class UIHelper {
     }
 
     static showTimer(scene, seconds, onComplete) {
-        const timerBg = scene.add.image(1640, 80, 'game_timer_bg').setDepth(this.DEPTH.BUTTONS).setScrollFactor(0);
+        const timerBg = scene.add.image(1640, 80, 'game_timer_bg').setDepth(this.DEPTH.BUTTONS);
 
         let timeLeft = seconds;
         const timerText = scene.add.text(1640, 80, this.#formatTime(timeLeft), {
             fontSize: '60px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0.5).setDepth(this.DEPTH.BUTTONS + 1).setScrollFactor(0);
+        }).setOrigin(0.5).setDepth(this.DEPTH.BUTTONS + 1);
 
         const timerEvent = scene.time.addEvent({
             delay: 1000,

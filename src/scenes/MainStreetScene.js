@@ -175,18 +175,6 @@ export class MainStreetScene extends Phaser.Scene {
         // this.load.image('npc6_bubble_3', 'assets/MainStreet/NPCs/NPC_6/game6_npc3_bubble.png');
         // this.load.image('npc6_bubble_reject', 'assets/MainStreet/NPCs/NPC_6/game6_npc1_bubble.png');
 
-        // // Fake NPCs
-        // this.load.spritesheet('fake_npc_1', 'assets/MainStreet/NPCs/NPC_only/fakenpc1.png',
-        //     { frameWidth: 250, frameHeight: 250 });
-        // this.load.spritesheet('fake_npc_2', 'assets/MainStreet/NPCs/NPC_only/fakenpc2.png',
-        //     { frameWidth: 250, frameHeight: 250 });
-        // this.load.spritesheet('fake_npc_3', 'assets/MainStreet/NPCs/NPC_only/fakenpc3.png',
-        //     { frameWidth: 150, frameHeight: 150 });
-        // this.load.spritesheet('fake_npc_4', 'assets/MainStreet/NPCs/NPC_only/fakenpc4.png',
-        //     { frameWidth: 378, frameHeight: 213 });
-        // this.load.spritesheet('fake_npc_5', 'assets/MainStreet/NPCs/NPC_only/fakenpc5.png',
-        //     { frameWidth: 250, frameHeight: 250 });
-
         // this.load.image('fake_npc_1_bubble', 'assets/MainStreet/NPCs/NPC_only/fakenpc1_bubble.png');
         // this.load.image('fake_npc_1_bubble1', 'assets/MainStreet/NPCs/NPC_only/fakenpc1_bubble1.png');
         // this.load.image('fake_npc_1_bubble2', 'assets/MainStreet/NPCs/NPC_only/fakenpc1_bubble2.png');
@@ -221,7 +209,7 @@ export class MainStreetScene extends Phaser.Scene {
             const bg = this.add.image(currentX, 540, key).setOrigin(0, 0.5).setDepth(1);
             currentX += bg.width; // 累加寬度，讓下一張接在後面
         });
-        this.add.image(3300, 295, 'stage_door').setOrigin(0.5, 0.5).setDepth(15).setScale(1.13);
+        this.add.image(4080, 750, 'stage_door').setOrigin(0.5, 0.5).setDepth(15);
 
         // 設定相機邊界為總長度 8414px
         this.cameras.main.setBounds(0, 0, 5500, 1080);
@@ -238,14 +226,14 @@ export class MainStreetScene extends Phaser.Scene {
         const ui = UIHelper.createGameCommonUI(this, null, null, introPage, 0);
 
         // Check if intro has been seen in this session
-        const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
-        if (hasSeenIntro) {
-            if (ui && ui.descriptionPanel) {
-                ui.descriptionPanel.setVisible(false);
-            }
-        } else {
-            sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
-        }
+        // const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
+        // if (hasSeenIntro) {
+        //     if (ui && ui.descriptionPanel) {
+        //         ui.descriptionPanel.setVisible(false);
+        //     }
+        // } else {
+        //     sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
+        // }
         //
         //buttons
         this.isLeftDown = false;
@@ -295,12 +283,13 @@ export class MainStreetScene extends Phaser.Scene {
         this.fakeNpcs = [];
 
 
-        const n1 = NpcHelper.createNpc(this, 1, 1000, 450, 1, 'npc1', npc1_bubbles, 6, 'npc1_anim');
-        const n2 = NpcHelper.createNpc(this, 2, 4000, 480, 1, 'npc2', npc2_bubbles, 6, 'npc2_anim');
-        const n3 = NpcHelper.createNpc(this, 3, 2000, 550, 1, 'npc3', npc3_bubbles, 6, 'npc3_anim');
-        const n4 = NpcHelper.createNpc(this, 4, 3350, 750, 1, 'npc4', npc4_bubbles, 15, 'npc4_anim');
-        const n5 = NpcHelper.createNpc(this, 5, 3600, 750, 1, 'npc5', npc5_bubbles, 15, 'npc5_anim');
-        const n6 = NpcHelper.createNpc(this, 6, 7900, 420, 1, 'npc6', npc6_bubbles, 6, 'npc6_anim');
+        const n1 = NpcHelper.createNpc(this, 1, 850, 550, 1, 'npc1', npc1_bubbles, 6, 'npc1_anim');
+        const n2 = NpcHelper.createNpc(this, 2, 1450, 550, 1, 'npc2', npc2_bubbles, 6, 'npc2_anim');
+        const n3 = NpcHelper.createNpc(this, 3, 2800, 550, 1, 'npc3', npc3_bubbles, 6, 'npc3_anim');
+        const n4 = NpcHelper.createNpc(this, 4, 3350, 550, 1, 'npc4', npc4_bubbles, 15, 'npc4_anim');
+        const n5 = NpcHelper.createNpc(this, 5, 3800, 750, 1, 'npc5', npc5_bubbles, 15, 'npc5_anim');
+        const n6 = NpcHelper.createNpc(this, 6, 4500, 550, 1, 'npc6', npc6_bubbles, 6, 'npc6_anim');
+        const n7 = NpcHelper.createNpc(this, 7, 5100, 650, 1, 'npc7', null, 6, 'npc7_anim');
 
         // this.interactiveNpcs.push(n1);
         // this.interactiveNpcs.push(n2);
@@ -348,8 +337,8 @@ export class MainStreetScene extends Phaser.Scene {
             });
         });
 
-        this.playerSprite = this.add.sprite(3650, 500,
-            `${genderKey}_idle`).setDepth(6).setScale(2);
+        this.playerSprite = this.add.sprite(600, 600,
+            `${genderKey}_idle`).setDepth(14).setScale(2);
 
         this.playerSprite.anims.play(`${genderKey}_idle_anim`);
 
@@ -606,6 +595,14 @@ export class MainStreetScene extends Phaser.Scene {
             frameRate: 30,
             repeat: -1
         });
+
+        this.anims.create({
+            key: 'npc7_anim',
+            frames: this.anims.generateFrameNumbers('npc7', { start: 0, end: 94 }),
+            frameRate: 30,
+            repeat: -1
+        });
+
 
         // Player character animations
 
