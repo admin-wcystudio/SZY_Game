@@ -49,7 +49,21 @@ export default class BaseGameScene extends Phaser.Scene {
     /**
      * Unified Initialization
      */
-    initGame(bgKey, descriptionKey, skipIntroBubble = false, autoStart = false) {
+    initGame(bgKey, descriptionKey, skipIntroBubble = false, autoStart = false, customConfig = {}) {
+
+        if (customConfig) {
+            this.targetRounds = customConfig.targetRounds ?? this.targetRounds;
+            this.roundPerSeconds = customConfig.roundPerSeconds ?? this.roundPerSeconds;
+            this.isAllowRoundFail = customConfig.isAllowRoundFail ?? this.isAllowRoundFail;
+            this.sceneIndex = customConfig.sceneIndex ?? this.sceneIndex;
+        }
+        console.log('Game Config:', {
+            targetRounds: this.targetRounds,
+            roundPerSeconds: this.roundPerSeconds,
+            isAllowRoundFail: this.isAllowRoundFail,
+            isContinuousTimer: this.isContinuousTimer
+        });
+
         this.gameState = 'init';
         this.roundIndex = 0;
         this.totalUsedSeconds = 0;

@@ -114,7 +114,7 @@ export class BootScene extends Phaser.Scene {
         for (let i = 1; i <= 4; i++) {
             this.load.image(`game1_failobject${i}`, `assets/images/Game_1/game1_failobject${i}.png`);
         }
-        tthis.load.image('game1_successobject', 'assets/images/Game_1/game1_successobject.png');
+        this.load.image('game1_successobject', 'assets/images/Game_1/game1_successobject.png');
         this.load.image('left_btn', asset_path + 'game1_left_button.png');
         this.load.image('left_btn_click', asset_path + 'game1_left_button_click.png');
         this.load.image('right_btn', asset_path + 'game1_right_button.png');

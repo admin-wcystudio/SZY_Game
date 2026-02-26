@@ -16,6 +16,13 @@ const config = {
     backgroundColor: '#000000',
     preseveDrawingBuffer: true,
     pixelArt: false,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 300 },
+            debug: false
+        }
+    },
     scene: [
         BootScene,
         GameStartScene,
