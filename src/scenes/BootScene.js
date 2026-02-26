@@ -86,6 +86,30 @@ export class BootScene extends Phaser.Scene {
         });
 
 
+        // general assets
+        const asset_path = 'assets/images/Game_1/';
+        this.load.image('again_btn', asset_path + 'again_button.png');
+        this.load.image('again_btn_click', asset_path + 'again_button_mouseover.png');
+        this.load.image('leave_btn', asset_path + 'leave_button.png');
+        this.load.image('leave_btn_click', asset_path + 'leave_button_mouseover.png');
+
+        this.load.image('close_btn', asset_path + 'game1_closebutton.png');
+        this.load.image('close_btn_click', asset_path + 'game1_closebutton_select.png');
+        this.load.image('fail_chance', asset_path + 'game1_fail.png');
+        this.load.image('success_chance', asset_path + 'game1_success.png');
+        this.load.image('game_chance_bg', asset_path + 'game1_gamechance.png');
+        this.load.image('fail_label', asset_path + 'game1_fail_icon.png');
+        this.load.image('success_label', asset_path + 'game1_success_icon.png');
+        this.load.image('game_timer', asset_path + 'game1_timer.png');
+
+        // load game bg
+        for (let i = 1; i <= 7; i++) {
+            if (i === 5) continue; // skip game 5 bg as it is not used
+            this.load.image(`game${i}_bg`, `assets/images/Game_${i}/game${i}_bg.png`);
+            this.load.image(`game${i}_description`, `assets/images/Game_${i}/game${i}_description.png`);
+        }
+
+
     }
 
     create() {
@@ -100,7 +124,7 @@ export class BootScene extends Phaser.Scene {
 
             this.registry.set('globalSettings', settings);
         }
-        this.scene.start('MainStreetScene');
+        this.scene.start('GameScene_1');
     }
 }
 

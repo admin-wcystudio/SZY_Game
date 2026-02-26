@@ -1,5 +1,4 @@
 import { CustomButton } from '../../UI/Button.js';
-import { CustomPanel, SettingPanel, CustomSinglePanel, CustomFailPanel } from '../../UI/Panel.js';
 import UIHelper from '../../UI/UIHelper.js';
 import GameManager from '../GameManager.js';
 
@@ -50,7 +49,7 @@ export default class BaseGameScene extends Phaser.Scene {
     /**
      * Unified Initialization
      */
-    initGame(bgKey, titleKey, descriptionKey, skipIntroBubble = false, autoStart = false) {
+    initGame(bgKey, descriptionKey, skipIntroBubble = false, autoStart = false) {
         this.gameState = 'init';
         this.roundIndex = 0;
         this.totalUsedSeconds = 0;
@@ -59,8 +58,10 @@ export default class BaseGameScene extends Phaser.Scene {
         const descriptionPages = this._formatDescription(descriptionKey);
 
         // 1. Setup UI via Helper
-        this.gameUI = UIHelper.createGameCommonUI(this, bgKey, titleKey,
+        this.gameUI = UIHelper.createGameCommonUI(this, bgKey,
             descriptionPages, this.targetRounds, this.config.depthUI);
+
+        console.log('Game UI Initialized');
 
         // 2. Setup Timer
         this._setupTimer();

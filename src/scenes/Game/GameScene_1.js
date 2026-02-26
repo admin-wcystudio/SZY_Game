@@ -9,7 +9,7 @@ export class GameScene_1 extends BaseGameScene {
     }
 
     create() {
-        this.initGame('game1_bg', 'game1_title', 'game1_description', false, true);
+        this.initGame('game1_bg', 'game1_description', false, true);
     }
 
 }

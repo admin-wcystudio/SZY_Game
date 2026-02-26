@@ -76,11 +76,10 @@ export default class UIHelper {
         };
     }
 
-    static createGameCommonUI(scene, bgKey, titleKey, descriptionPages, targetRounds = 3) {
+    static createGameCommonUI(scene, bgKey, descriptionPages, targetRounds = 3) {
         const { width, height } = scene.scale;
 
         if (bgKey) scene.add.image(width / 2, height / 2, bgKey).setDepth(this.DEPTH.BG);
-        if (titleKey) scene.add.image(width / 2, 80, titleKey).setDepth(this.DEPTH.TITLE);
 
         // UI Setup
         const panels = [
