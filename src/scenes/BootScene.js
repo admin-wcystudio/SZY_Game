@@ -87,6 +87,12 @@ export class BootScene extends Phaser.Scene {
 
 
         // general assets
+        this.load.image('gameintro_bag', 'assets/images/MainStreet/gameintro_bag.png');
+        this.load.image('gameintro_bag_click', 'assets/images/MainStreet/gameintro_bag_click.png');
+        this.load.image('gameintro_closebutton', 'assets/images/MainStreet/gameintro_closebutton.png');
+        this.load.image('gameintro_closebutton_click', 'assets/images/MainStreet/gameintro_closebutton_click.png');
+
+
         const asset_path = 'assets/images/Game_1/';
         this.load.image('again_btn', asset_path + 'again_button.png');
         this.load.image('again_btn_click', asset_path + 'again_button_mouseover.png');
@@ -97,10 +103,23 @@ export class BootScene extends Phaser.Scene {
         this.load.image('close_btn_click', asset_path + 'game1_closebutton_select.png');
         this.load.image('fail_chance', asset_path + 'game1_fail.png');
         this.load.image('success_chance', asset_path + 'game1_success.png');
-        this.load.image('game_chance_bg', asset_path + 'game1_gamechance.png');
-        this.load.image('fail_label', asset_path + 'game1_fail_icon.png');
-        this.load.image('success_label', asset_path + 'game1_success_icon.png');
-        this.load.image('game_timer', asset_path + 'game1_timer.png');
+        this.load.image('game_gamechance', asset_path + 'game1_gamechance.png');
+        this.load.image('game_fail_label', asset_path + 'game1_fail_icon.png');
+        this.load.image('game_success_label', asset_path + 'game1_success_icon.png');
+        this.load.image('game_timer_bg', asset_path + 'game1_timer.png');
+        this.load.image('popup_bg', asset_path + 'popup_bg.png');
+
+
+        //game 1 asset
+        for (let i = 1; i <= 4; i++) {
+            this.load.image(`game1_failobject${i}`, `assets/images/Game_1/game1_failobject${i}.png`);
+        }
+        tthis.load.image('game1_successobject', 'assets/images/Game_1/game1_successobject.png');
+        this.load.image('left_btn', asset_path + 'game1_left_button.png');
+        this.load.image('left_btn_click', asset_path + 'game1_left_button_click.png');
+        this.load.image('right_btn', asset_path + 'game1_right_button.png');
+        this.load.image('right_btn_click', asset_path + 'game1_right_button_click.png');
+        this.load.image('game1_object_description', asset_path + 'game1_object_description.png');
 
         // load game bg
         for (let i = 1; i <= 7; i++) {
