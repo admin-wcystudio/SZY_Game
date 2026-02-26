@@ -315,7 +315,63 @@ export default class BaseGameScene extends Phaser.Scene {
         });
     }
 
+    handleLose() {
+        // Prevent multiple entries
+        if (this.gameState === 'gameLose') return;
 
+        this.currentFailCount = (this.currentFailCount || 0) + 1; // Increment fail count
+
+        // In AllowRoundFail mode, losing a round doesn't mean Game Over unless we are out of rounds
+        if (this.isAllowRoundFail) {
+            this.isGameActive = false;
+            this.gameState = 'roundLose';
+
+            if (this.gameTimer) this.gameTimer.stop();
+            this.enableGameInteraction(false);
+            this.updateRoundUI(false);
+
+            // Check if this was the last round (Game Over) or just a round loss
+            if (this.roundIndex + 1 >= this.targetRounds) {
+                this.gameState = 'gameLose'; // Will trigger Fail Panel after bubble
+                this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
+            }
+
+            this.showBubble('tryagain');
+        } else {
+            // Standard Logic
+            this.isGameActive = false;
+            this.gameState = 'lose';
+
+            this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
+            if (this.gameTimer) this.gameTimer.stop();
+            this.enableGameInteraction(false);
+            this.updateRoundUI(false);
+            this.showBubble('tryagain');
+        }
+
+    }
+    updateRoundUI(isSuccess) {
+        // Reverse order to update from Left to Right
+        if (this.gameUI?.roundStates) {
+            const index = this.gameUI.roundStates.length - 1 - this.roundIndex;
+            const state = this.gameUI.roundStates[index];
+            if (state) {
+                state.content.setTexture(isSuccess ? 'success_chance' : 'fail_chance');
+                state.isSuccess = isSuccess;
+            }
+        }
+    }
+
+    showFailPanel() {
+        // 確保這是在所有東西的最上層
+        const popupPanel = new CustomFailPanel(this, 960, 540, () => {
+            popupPanel.destroy();
+            this.resetWholeGame(); // 重新開始整個遊戲
+        }, () => {
+            GameManager.backToMainStreet(this);
+        });
+        popupPanel.setDepth(1000);
+    }
 
     // --- Abstract Hooks (To be implemented by your 7 games) ---
 

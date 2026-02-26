@@ -75,7 +75,12 @@ export class MainStreetScene extends Phaser.Scene {
         this.load.image('stage_door', 'assets/images/MainStreet/stage_door.png');
         this.load.image('gameintro_01', 'assets/images/MainStreet/gameintro.png');
         this.load.image('gametimer', 'assets/images/MainStreet/gameintro_timer.png');
-    
+
+        this.load.image('npc1_bubble_1', 'assets/images/Game_4/game4_npc_box1.png');
+        this.load.image('npc2_bubble_1', 'assets/images/Game_4/game4_npc_box1.png');
+        this.load.image('npc3_bubble_1', 'assets/images/Game_2/game2_npc_box1.png');
+        this.load.image('npc4_bubble_1', 'assets/images/Game_1/game1_npc_box1.png');
+
 
         // // Only load spritesheets for the selected gender
         let gender = 'F';

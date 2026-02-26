@@ -334,10 +334,10 @@ export class CustomFailPanel extends Phaser.GameObjects.Container {
         this.contentImage = scene.add.image(0, 0, 'popup_bg').setDepth(200);
         this.add(this.contentImage);
 
-        this.tryAgainBtn = new CustomButton(scene, 0, -100, 'game_tryagain', 'game_tryagain_click', () => {
+        this.tryAgainBtn = new CustomButton(scene, 0, -100, 'again_btn', 'again_btn_click', () => {
             if (onRestart) onRestart();
         }).setDepth(201);
-        this.quitBtn = new CustomButton(scene, 0, 100, 'game_quit', 'game_quit_click', () => {
+        this.quitBtn = new CustomButton(scene, 0, 100, 'leave_btn', 'leave_btn_click', () => {
             if (onQuit) onQuit();
         }).setDepth(201);
 
@@ -345,11 +345,6 @@ export class CustomFailPanel extends Phaser.GameObjects.Container {
 
         // 重要：將呢個 Container 加落 Scene
         scene.add.existing(this);
-
-        this.refresh();
     }
 
-    refresh() {
-
-    }
 }
