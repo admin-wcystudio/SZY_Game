@@ -4,6 +4,7 @@ import { LoginScene } from './scenes/LoginScene.js';
 import { TransitionScene } from './scenes/TransitionScene.js';
 import { MainStreetScene } from './scenes/MainStreetScene.js';
 import { GameScene_1 } from './scenes/Game/GameScene_1.js';
+import { GameResultScene } from './scenes/GameResultScene.js';
 
 
 const config = {
@@ -28,6 +29,7 @@ const config = {
         GameStartScene,
         LoginScene,
         TransitionScene,
+        GameResultScene,
         MainStreetScene,
         GameScene_1
     ],

@@ -157,6 +157,127 @@ export default class UIHelper {
         };
     }
 
+    static createResultCommonUI(scene) {
+
+        const width = scene.cameras.main.width;
+        const height = scene.cameras.main.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        const descriptionPages = [
+            { content: 'finishpage_information1' },
+            { content: 'finishpage_information2' }
+        ];
+
+        scene.add.image(centerX, centerY, 'finishpage_bg');
+
+        // Panels
+        const settingPanel = new SettingPanel(scene, 960, 540).setScrollFactor(0);
+        settingPanel.setVisible(false);
+        settingPanel.setDepth(999); // Setting panel above others by default
+        scene.add.existing(settingPanel);
+
+        const descriptionPanel = new CustomPanel(scene, 960, 540, descriptionPages).setScrollFactor(0);
+
+        // Hide navigation buttons and override refresh to keep them hidden
+        descriptionPanel.prevBtn.setVisible(false).setActive(false);
+        descriptionPanel.nextBtn.setVisible(false).setActive(false);
+        const originalRefresh = descriptionPanel.refresh.bind(descriptionPanel);
+        descriptionPanel.refresh = () => {
+            originalRefresh();
+            descriptionPanel.prevBtn.setVisible(false);
+            descriptionPanel.nextBtn.setVisible(false);
+        };
+
+        descriptionPanel.setVisible(false);
+        descriptionPanel.setDepth(999);
+        scene.add.existing(descriptionPanel);
+
+        // Auto-switch pages
+        scene.time.addEvent({
+            delay: 5000,
+            loop: true,
+            callback: () => {
+                if (descriptionPanel.visible && descriptionPanel.pages.length > 1) {
+                    descriptionPanel.currentPage++;
+                    if (descriptionPanel.currentPage >= descriptionPanel.pages.length) {
+                        descriptionPanel.currentPage = 0;
+                    }
+                    descriptionPanel.refresh();
+                }
+            }
+        });
+
+        const itemPanel = new ItemsPanel(scene, 960, 540).setScrollFactor(0);
+        itemPanel.setVisible(false);
+        itemPanel.setDepth(999);
+        scene.add.existing(itemPanel);
+
+        const allButtons = [];
+
+        // Buttons
+        const settingBtn = new CustomButton(scene, 100, 100, 'setting_btn', 'setting_btn_click',
+            () => {
+                openPanel(settingPanel, settingBtn);
+            }, () => {
+                settingPanel.setVisible(false);
+            }).setScrollFactor(0);
+
+        settingBtn.setDepth(999); // Buttons above panels
+        allButtons.push(settingBtn);
+
+        const descBtn = new CustomButton(scene, 250, 100, 'desc_button', 'desc_button_click',
+            () => {
+                openPanel(descriptionPanel, descBtn);
+            }, () => {
+                descriptionPanel.setVisible(false);
+            }).setScrollFactor(0);
+
+        descBtn.setDepth(999);
+        allButtons.push(descBtn);
+
+        const itemBtn = new CustomButton(scene, 400, 100, 'gameintro_bag', 'gameintro_bag_click',
+            () => {
+                openPanel(itemPanel, itemBtn);
+            }, () => {
+                itemPanel.setVisible(false);
+            }).setScrollFactor(0);
+        itemBtn.setDepth(999);
+        allButtons.push(itemBtn);
+
+        settingBtn.needClicked = true;
+        descBtn.needClicked = true;
+        itemBtn.needClicked = true;
+
+
+        descriptionPanel.toggleBtn = descBtn;
+        itemBtn.toggleBtn = itemBtn;
+        settingPanel.toggleBtn = settingBtn;
+
+
+        function openPanel(targetPanel, activeBtn) {
+            [settingPanel, descriptionPanel, itemPanel]
+                .forEach(p => {
+                    if (p) p.setVisible(false);
+                });
+            // --- 重設所有按鈕狀態 ---
+            allButtons.forEach(btn => {
+                if (btn !== activeBtn) {
+                    btn.resetStatus?.();
+                }
+                btn.setScrollFactor(0);
+            });
+            if (targetPanel) {
+                targetPanel.setVisible(true);
+                targetPanel.currentPage = 0;
+                if (targetPanel.refresh) targetPanel.refresh();
+            }
+        }
+
+        return { settingBtn, descBtn, itemBtn, settingPanel, descriptionPanel, itemPanel };
+    }
+
+
     static #formatTime(s) {
         const mins = Math.floor(s / 60);
         const secs = s % 60;

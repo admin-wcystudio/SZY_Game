@@ -8,7 +8,7 @@ export class GameResultScene extends Phaser.Scene {
     }
 
     preload() {
-        const path = 'assets/GameEnd/';
+        const path = 'assets/images/GameEnd/';
 
         // Background
         this.load.image('finishpage_bg', `${path}finishpage_bg.png`);
@@ -34,8 +34,8 @@ export class GameResultScene extends Phaser.Scene {
         this.load.image('right_arrow_button_click', `${path}right_arrow_button_click.png`);
 
         // Information Pages
-        this.load.image('finishpage_information1', `${path}finishpage_information1.png`);
-        this.load.image('finishpage_information2', `${path}finishpage_information2.png`);
+        this.load.image('finishpage_information1', `${path}finishpage_information_p1.png`);
+        this.load.image('finishpage_information2', `${path}finishpage_information_p2.png`);
         this.load.image('program_information_p3', `${path}program_information_p3.png`);
         this.load.image('program_information_p4', `${path}program_information_p4.png`);
 
