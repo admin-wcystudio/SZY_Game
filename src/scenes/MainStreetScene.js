@@ -209,7 +209,7 @@ export class MainStreetScene extends Phaser.Scene {
             const bg = this.add.image(currentX, 540, key).setOrigin(0, 0.5).setDepth(1);
             currentX += bg.width; // 累加寬度，讓下一張接在後面
         });
-        this.add.image(4080, 750, 'stage_door').setOrigin(0.5, 0.5).setDepth(15);
+        this.add.image(4150, 600, 'stage_door').setOrigin(0.5, 0.5).setDepth(15);
 
         // 設定相機邊界為總長度 8414px
         this.cameras.main.setBounds(0, 0, 5500, 1080);
@@ -286,7 +286,7 @@ export class MainStreetScene extends Phaser.Scene {
         const n1 = NpcHelper.createNpc(this, 1, 850, 550, 1, 'npc1', npc1_bubbles, 6, 'npc1_anim');
         const n2 = NpcHelper.createNpc(this, 2, 1450, 550, 1, 'npc2', npc2_bubbles, 6, 'npc2_anim');
         const n3 = NpcHelper.createNpc(this, 3, 2800, 550, 1, 'npc3', npc3_bubbles, 6, 'npc3_anim');
-        const n4 = NpcHelper.createNpc(this, 4, 3350, 550, 1, 'npc4', npc4_bubbles, 15, 'npc4_anim');
+        const n4 = NpcHelper.createNpc(this, 4, 3350, 550, 1, 'npc4', npc4_bubbles, 6, 'npc4_anim');
         const n5 = NpcHelper.createNpc(this, 5, 3800, 750, 1, 'npc5', npc5_bubbles, 15, 'npc5_anim');
         const n6 = NpcHelper.createNpc(this, 6, 4500, 550, 1, 'npc6', npc6_bubbles, 6, 'npc6_anim');
         const n7 = NpcHelper.createNpc(this, 7, 5100, 650, 1, 'npc7', null, 6, 'npc7_anim');
