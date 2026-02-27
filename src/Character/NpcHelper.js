@@ -10,6 +10,11 @@ export default class NpcHelper {
 
         npc.setScale(2);
         npc.animKey = animKey;
+        npc.baseKey = key;
+        npc.baseAnimKey = animKey;
+        npc.glowKey = `${key}_glow`;
+        npc.glowAnimKey = `${key}_glow_anim`;
+        npc.isGlow = false;
         npc.bubbles = bubbles;
         npc.setInteractive({ useHandCursor: true });
         npc.id = id;

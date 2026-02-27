@@ -65,8 +65,9 @@ class BasePanel extends Phaser.GameObjects.Container {
  * Used for Tutorials or Multi-page Info
  */
 export class CustomPanel extends BasePanel {
-    constructor(scene, x, y, pages) {
-        super(scene, x, y, pages[0]?.content);
+    constructor(scene, x, y, pages = []) {
+        const firstPageContent = (pages && pages.length > 0) ? pages[0].content : pages;
+        super(scene, x, y, firstPageContent);
         this.pages = pages || [];
         this.currentPage = 0;
 

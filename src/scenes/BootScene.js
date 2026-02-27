@@ -109,7 +109,6 @@ export class BootScene extends Phaser.Scene {
         this.load.image('game_timer_bg', asset_path + 'game1_timer.png');
         this.load.image('popup_bg', asset_path + 'popup_bg.png');
 
-
         //game 1 asset
         for (let i = 1; i <= 4; i++) {
             this.load.image(`game1_failobject${i}`, `assets/images/Game_1/game1_failobject${i}.png`);
@@ -143,7 +142,7 @@ export class BootScene extends Phaser.Scene {
 
             this.registry.set('globalSettings', settings);
         }
-        this.scene.start('GameResultScene');
+        this.scene.start('MainStreetScene');
     }
 }
 
