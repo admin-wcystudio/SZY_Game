@@ -90,6 +90,31 @@ export class GameScene_2 extends BaseGameScene {
             sceneIndex: 2
         });
 
+        // Define walkable areas (1 = walkable stone path, 0 = blocked grass)
+        // Grid coordinates based on the maze layout, tile size is 100px
+        this.tileSize = 70;
+        this.gridOffsetX = 50;
+        this.gridOffsetY = 100;
+
+        // Map of the maze - adjust based on actual maze layout
+        // This is a simplified grid representing walkable (1) vs blocked (0) areas
+        this.mazeGrid = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 0
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 1
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 2
+            [0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0], // row 3
+            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0], // row 4
+            [0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0], // row 5
+            [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0], // row 6
+            [0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0], // row 7
+            [0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0], // row 8
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 9
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 10
+        ];
+
+        // Draw debug graphics to visualize the grid
+        this.drawDebugGrid();
+
         this.leftBtn = new CustomButton(this, 1550, 900, 'left_btn', 'left_btn_click', () => {
             this.moveDirection('left');
             this.resetPlayerState();
@@ -145,27 +170,86 @@ export class GameScene_2 extends BaseGameScene {
     moveDirection(direction) {
         const speed = 100;
         let animKey;
+        let newX = this.player.x;
+        let newY = this.player.y;
 
         switch (direction) {
             case 'left':
                 animKey = 'leftwalking';
-                this.player.x -= speed;
+                newX -= speed;
                 break;
             case 'right':
                 animKey = 'rightwalking';
-                this.player.x += speed;
+                newX += speed;
                 break;
             case 'up':
                 animKey = 'backwalking';
-                this.player.y -= speed;
+                newY -= speed;
                 break;
             case 'down':
                 animKey = 'frontwalking';
-                this.player.y += speed;
+                newY += speed;
                 break;
         }
 
-        this.player.anims.play(`${this.genderKey}_${animKey}_anim`, true);
+        // Check if the new position is walkable
+        if (this.isWalkable(newX, newY)) {
+            this.player.x = newX;
+            this.player.y = newY;
+            this.player.anims.play(`${this.genderKey}_${animKey}_anim`, true);
+        } else {
+            console.log('Cannot move to blocked area');
+        }
+    }
+
+    // Convert pixel coordinates to grid coordinates
+    pixelToGrid(x, y) {
+        const gridX = Math.floor((x - this.gridOffsetX) / this.tileSize);
+        const gridY = Math.floor((y - this.gridOffsetY) / this.tileSize);
+        return { gridX, gridY };
+    }
+
+    // Check if a pixel position is on a walkable tile
+    isWalkable(x, y) {
+        const { gridX, gridY } = this.pixelToGrid(x, y);
+
+        // Check if coordinates are within grid bounds
+        if (gridY < 0 || gridY >= this.mazeGrid.length ||
+            gridX < 0 || gridX >= this.mazeGrid[0].length) {
+            return false;
+        }
+
+        // Return true if tile is walkable (1), false if blocked (0)
+        return this.mazeGrid[gridY][gridX] === 1;
+    }
+
+    // Draw debug grid overlay to visualize walkable areas
+    drawDebugGrid() {
+        const graphics = this.add.graphics();
+        graphics.setDepth(10); // Above background, below player
+
+        for (let row = 0; row < this.mazeGrid.length; row++) {
+            for (let col = 0; col < this.mazeGrid[row].length; col++) {
+                const x = col * this.tileSize + this.gridOffsetX;
+                const y = row * this.tileSize + this.gridOffsetY;
+
+                // Draw walkable tiles in green with transparency
+                if (this.mazeGrid[row][col] === 1) {
+                    graphics.fillStyle(0x00ff00, 0.3); // Green, 30% opacity
+                } else {
+                    graphics.fillStyle(0xff0000, 0.2); // Red, 20% opacity
+                }
+
+                graphics.fillRect(x, y, this.tileSize, this.tileSize);
+
+                // Draw grid lines
+                graphics.lineStyle(1, 0xffffff, 0.5);
+                graphics.strokeRect(x, y, this.tileSize, this.tileSize);
+            }
+        }
+
+        // Store graphics object so we can toggle it later if needed
+        this.debugGraphics = graphics;
     }
 
     resetPlayerState() {
