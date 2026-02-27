@@ -76,7 +76,7 @@ export class GameScene_3 extends BaseGameScene {
         // Now call initGame which will call setupGameObjects
         this.initGame('game3_bg', 'game3_description', false, false, {
             targetRounds: 1,
-            roundPerSeconds: 6000,
+            roundPerSeconds: 10,
             isAllowRoundFail: false,
             isContinuousTimer: true,
             sceneIndex: 3
@@ -119,17 +119,12 @@ export class GameScene_3 extends BaseGameScene {
             card.isFlipped = false;
             card.isMatched = false;
 
-            // Add hover effect - change to select texture on mouseover
             cardBack.on('pointerover', () => {
-                if (!card.isFlipped && !card.isMatched) {
-                    cardBack.setTexture('game3_card_select');
-                }
+                cardBack.setTexture('game3_card_select');
             });
 
             cardBack.on('pointerout', () => {
-                if (!card.isFlipped && !card.isMatched) {
-                    cardBack.setTexture('game3_card');
-                }
+                cardBack.setTexture('game3_card');
             });
 
             // Add click handler
@@ -227,6 +222,9 @@ export class GameScene_3 extends BaseGameScene {
 
     enableGameInteraction(enabled) {
         this.cards.forEach(card => {
+            // Skip if card is destroyed or matched
+            if (!card || card.isMatched || !card.cardBack) return;
+
             if (enabled) {
                 card.cardBack.setInteractive();
             } else {
@@ -251,7 +249,13 @@ export class GameScene_3 extends BaseGameScene {
     }
 
     showWin() {
-        this.showObjectPanel();
+        this.winPreview = this.add.image(this.centerX, this.centerY + 100, 'game3_preview').setDepth(1000)
+            .setInteractive({ useHandCursor: true }).setScale(1.3)
+            .on('pointerdown', () => {
+                this.winPreview.destroy();
+                this.showObjectPanel();
+            });
+
     }
 
     showObjectPanel() {
