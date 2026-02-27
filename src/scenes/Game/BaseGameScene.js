@@ -246,7 +246,12 @@ export default class BaseGameScene extends Phaser.Scene {
 
     _setupTimer() {
         if (this.roundPerSeconds > 0) {
-            this.gameTimer = UIHelper.showTimer(this, this.roundPerSeconds, false, () => this.handleLose());
+            this.gameTimer = UIHelper.showTimer(this, this.roundPerSeconds, () => {
+                console.log('[Timer] Time expired, calling handleLose');
+                if (this.isGameActive && this.gameState === 'playing') {
+                    this.handleLose();
+                }
+            });
         } else {
             this.gameTimer = { start: () => { }, stop: () => { }, reset: () => { }, getRemaining: () => 0 };
         }
@@ -421,11 +426,11 @@ export default class BaseGameScene extends Phaser.Scene {
         this.isGameActive = false;
         this.currentFailCount = 0;
 
-        // 2. Reset timer
-        if (this.gameTimer) {
-            this.gameTimer.stop();
-            this.gameTimer.reset(this.roundPerSeconds);
+        // 2. Destroy and recreate timer (because timer event is destroyed when it reaches 0)
+        if (this.gameTimer && this.gameTimer.destroy) {
+            this.gameTimer.destroy();
         }
+        this._setupTimer();
 
         // 3. Clear bubbles and feedback labels
         if (this.currentBubbleImg) {
@@ -458,6 +463,8 @@ export default class BaseGameScene extends Phaser.Scene {
         // 7. Re-show description panel to restart the flow
         if (this.gameUI?.descriptionPanel) {
             this.gameUI.descriptionPanel.show();
+            // Set callback to start game when panel is closed (skip intro since already shown)
+            this.gameUI.descriptionPanel.setCloseCallBack(() => this.startGame());
         }
 
         console.log('[Game] Whole game reset - restarting from beginning');
