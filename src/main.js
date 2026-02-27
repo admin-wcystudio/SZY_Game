@@ -5,6 +5,7 @@ import { TransitionScene } from './scenes/TransitionScene.js';
 import { MainStreetScene } from './scenes/MainStreetScene.js';
 import { GameScene_1 } from './scenes/Game/GameScene_1.js';
 import { GameResultScene } from './scenes/GameResultScene.js';
+import { GameScene_2 } from './scenes/Game/GameScene_2.js';
 
 
 const config = {
@@ -31,7 +32,8 @@ const config = {
         TransitionScene,
         GameResultScene,
         MainStreetScene,
-        GameScene_1
+        GameScene_1,
+        GameScene_2
     ],
     scale: {
         mode: Phaser.Scale.FIT,
