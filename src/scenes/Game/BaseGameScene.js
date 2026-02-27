@@ -15,7 +15,7 @@ export default class BaseGameScene extends Phaser.Scene {
         this.config = {
             depthUI: 1000,
             depthBubble: 1500,
-            depthFeedback: 800,
+            depthFeedback: 1000,
             roundDuration: 30,
             targetRounds: 3,
             isAllowRoundFail: false,
@@ -265,6 +265,8 @@ export default class BaseGameScene extends Phaser.Scene {
 
     startGame() {
         if (this.gameState === 'playing') return;
+
+        this.gameUI.descriptionPanel?.setCloseCallBack(() => { });
 
         this.gameState = 'playing';
         this.isGameActive = true;

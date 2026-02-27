@@ -4,8 +4,8 @@ import { CustomButton } from '../../UI/Button.js';
 import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
 import GameManager from '../GameManager.js';
 
-export class GameScene_5 extends BaseGameScene {
+export class GameScene_7 extends BaseGameScene {
     constructor() {
-        super('GameScene_5');
+        super('GameScene_7');
     }
 }

@@ -92,9 +92,10 @@ export class GameScene_2 extends BaseGameScene {
 
         // Define walkable areas (1 = walkable stone path, 0 = blocked grass)
         // Grid coordinates based on the maze layout, tile size is 100px
-        this.tileSize = 70;
-        this.gridOffsetX = 50;
-        this.gridOffsetY = 100;
+        // ADJUST THESE VALUES to align grid with your background maze image:
+        this.tileSize = 100;      // Size of each grid cell in pixels
+        this.gridOffsetX = 60;    // X position where maze starts (adjust this)
+        this.gridOffsetY = 0;     // Y position where maze starts (adjust this)
 
         // Map of the maze - adjust based on actual maze layout
         // This is a simplified grid representing walkable (1) vs blocked (0) areas
@@ -108,11 +109,9 @@ export class GameScene_2 extends BaseGameScene {
             [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0], // row 6
             [0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0], // row 7
             [0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0], // row 8
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 9
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 10
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], // row 9
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], // row 10
         ];
-
-        // Draw debug graphics to visualize the grid
         this.drawDebugGrid();
 
         this.leftBtn = new CustomButton(this, 1550, 900, 'left_btn', 'left_btn_click', () => {
@@ -143,15 +142,15 @@ export class GameScene_2 extends BaseGameScene {
         }).setDepth(2);
 
         // Initially disable buttons until game starts
-        this.leftBtn.setVisible(false);
-        this.rightBtn.setVisible(false);
-        this.upBtn.setVisible(false);
-        this.downBtn.setVisible(false);
+        // this.leftBtn.setVisible(false);
+        // this.rightBtn.setVisible(false);
+        // this.upBtn.setVisible(false);
+        // this.downBtn.setVisible(false);
 
-        this.leftBtn.disableInteractive();
-        this.rightBtn.disableInteractive();
-        this.upBtn.disableInteractive();
-        this.downBtn.disableInteractive();
+        // this.leftBtn.disableInteractive();
+        // this.rightBtn.disableInteractive();
+        // this.upBtn.disableInteractive();
+        // this.downBtn.disableInteractive();
 
         this.genderKey = this.gender === 'M' ? 'boy' : 'girl';
         console.log('genderKey:', this.genderKey);
@@ -193,12 +192,16 @@ export class GameScene_2 extends BaseGameScene {
         }
 
         // Check if the new position is walkable
+        const { gridX, gridY } = this.pixelToGrid(newX, newY);
+        console.log(`Trying to move ${direction} to pixel (${newX}, ${newY}) = grid (${gridX}, ${gridY})`);
+
         if (this.isWalkable(newX, newY)) {
             this.player.x = newX;
             this.player.y = newY;
             this.player.anims.play(`${this.genderKey}_${animKey}_anim`, true);
+            console.log('Movement allowed');
         } else {
-            console.log('Cannot move to blocked area');
+            console.log(`Cannot move to blocked area. Grid value: ${this.mazeGrid[gridY]?.[gridX] ?? 'out of bounds'}`);
         }
     }
 
@@ -242,14 +245,25 @@ export class GameScene_2 extends BaseGameScene {
 
                 graphics.fillRect(x, y, this.tileSize, this.tileSize);
 
-                // Draw grid lines
+                // Draw grid lines and coordinates
                 graphics.lineStyle(1, 0xffffff, 0.5);
                 graphics.strokeRect(x, y, this.tileSize, this.tileSize);
+
+                // Add text showing grid coordinates
+                const text = this.add.text(x + 5, y + 5, `${col},${row}`, {
+                    fontSize: '12px',
+                    fill: '#ffffff'
+                }).setDepth(11);
             }
         }
 
         // Store graphics object so we can toggle it later if needed
         this.debugGraphics = graphics;
+
+        // Log player's initial position
+        const { gridX, gridY } = this.pixelToGrid(this.centerX, 1000);
+        console.log(`Player starts at pixel (${this.centerX}, 1000) = grid (${gridX}, ${gridY})`);
+        console.log(`Grid offset: (${this.gridOffsetX}, ${this.gridOffsetY}), Tile size: ${this.tileSize}`);
     }
 
     resetPlayerState() {
@@ -292,13 +306,6 @@ export class GameScene_2 extends BaseGameScene {
 
         console.log('[GameScene_2] Reset for new round');
     }
-
-
-    update() {
-
-    }
-
-
 
     handleLose() {
         if (this.gameState === 'gameLose' || this.gameState === 'gameWin') return;
