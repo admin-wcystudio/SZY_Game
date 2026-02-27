@@ -70,6 +70,7 @@ export class CustomPanel extends BasePanel {
         super(scene, x, y, firstPageContent);
         this.pages = pages || [];
         this.currentPage = 0;
+        this.customCloseCallback = null;
 
         // Re-use the background image as content holder
         this.contentImage = this.bg;
@@ -77,11 +78,22 @@ export class CustomPanel extends BasePanel {
         // Standardized Buttons
         this.prevBtn = new CustomButton(scene, -570, 260, 'prev_button', 'prev_button_click', () => this.changePage(-1));
         this.nextBtn = new CustomButton(scene, 570, 260, 'next_button', 'next_button_click', () => this.changePage(1));
-        this.closeBtn = new CustomButton(scene, 625, -295, 'close_button', 'close_button_click', () => this.hide());
+        this.closeBtn = new CustomButton(scene, 625, -295, 'close_button', 'close_button_click', () => this.handleClose());
 
         this.closeBtn.setScrollFactor(0);
         this.add([this.prevBtn, this.nextBtn, this.closeBtn]);
         this.refresh();
+    }
+
+    setCloseCallBack(callback) {
+        this.customCloseCallback = callback;
+    }
+
+    handleClose() {
+        this.hide();
+        if (this.customCloseCallback) {
+            this.customCloseCallback();
+        }
     }
 
     changePage(dir) {

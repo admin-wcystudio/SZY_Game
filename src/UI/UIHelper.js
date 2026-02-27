@@ -106,7 +106,10 @@ export default class UIHelper {
             roundStates.push({ round: i + 1, content: icon, isSuccess: false });
         }
 
-        return { settingBtn: buttons[0], descBtn: buttons[1], itemBtn: buttons[2], roundStates };
+        return {
+            settingBtn: buttons[0], descBtn: buttons[1], itemBtn: buttons[2], roundStates
+            , descriptionPanel: panels[1]
+        };
     }
 
     // ================== UTILITIES ==================
@@ -147,12 +150,18 @@ export default class UIHelper {
                     if (onComplete) onComplete();
                 }
             },
-            loop: true
+            loop: true,
+            paused: true  // Start paused, will be resumed when start() is called
         });
 
         return {
             stop: () => timerEvent.paused = true,
             start: () => timerEvent.paused = false,
+            reset: (newSeconds) => {
+                timeLeft = newSeconds;
+                timerText.setText(this.#formatTime(timeLeft));
+            },
+            getRemaining: () => timeLeft,
             destroy: () => { timerBg.destroy(); timerText.destroy(); timerEvent.destroy(); }
         };
     }

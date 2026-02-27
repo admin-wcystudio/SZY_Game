@@ -1,5 +1,7 @@
 import BaseGameScene from './BaseGameScene.js';
 import { CustomButton } from '../../UI/Button.js';
+import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
+import GameManager from '../GameManager.js';
 
 export class GameScene_1 extends BaseGameScene {
     constructor() {
@@ -12,6 +14,16 @@ export class GameScene_1 extends BaseGameScene {
         this.height = this.cameras.main.height;
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
+
+        this.load.image('game1_npc_box_intro', `${path}game1_npc_box3.png`);
+
+        this.load.image('game1_npc_box_boy_win', `${path}game1_npc_box4.png`);
+        this.load.image('game1_npc_box_girl_win', `${path}game1_npc_girl_box4.png`);
+        this.load.image('game1_npc_box_win', `${path}game1_npc_box5.png`);
+        this.load.image('game1_npc_box_boy_win3', `${path}game1_npc_box6.png`);
+        this.load.image('game1_npc_box_girl_win3', `${path}game1_npc_girl_box6.png`);
+
+        this.load.image('game1_npc_box_tryagain', `${path}game1_npc_box7.png`);
 
         this.gender = 'M';
         if (localStorage.getItem('player')) {
@@ -50,19 +62,17 @@ export class GameScene_1 extends BaseGameScene {
                 'game1_girl_success.png', { frameWidth: 623, frameHeight: 272 });
         }
 
-        for (let i = 1; i <= 8; i++) {
-            this.load.image(`game1_npc_box${i}`, `assets/images/Game_1/game1_npc_box${i}.png`);
-        }
     }
 
     create() {
         this.createAnimations();
 
-        this.initGame('game1_bg', 'game1_description', false, true, {
+        this.initGame('game1_bg', 'game1_description', false, false, {
             targetRounds: 3,
-            roundPerSeconds: 60,
+            roundPerSeconds: 6000,
             isAllowRoundFail: false,
-            isContinuousTimer: true
+            isContinuousTimer: true,
+            sceneIndex: 1
         });
 
         this.leftBtn = new CustomButton(this, 1550, 900, 'left_btn', 'left_btn_click', () => {
@@ -78,6 +88,12 @@ export class GameScene_1 extends BaseGameScene {
             }, () => {
 
             }).setDepth(2);
+
+        // Initially disable buttons until game starts
+        this.leftBtn.setVisible(false);
+        this.rightBtn.setVisible(false);
+        this.leftBtn.disableInteractive();
+        this.rightBtn.disableInteractive();
 
         this.genderKey = this.gender === 'M' ? 'boy' : 'girl';
         console.log('genderKey:', this.genderKey);
@@ -97,12 +113,15 @@ export class GameScene_1 extends BaseGameScene {
 
 
         // spawn settings
-        this.canSpawn = true;
+        this.canSpawn = false;
         this.minX = 200;
         this.maxX = 1600;
         this.minY = 0;
         this.maxY = 700;
-        this.fallspeed = 4;
+        this.failSpeed = 4;
+        this.isSlowDown = false;
+        this.slowDownSpeed = this.failSpeed / 2;
+
 
         // Create item sprites and store them in an array
         this.itemKeys = [
@@ -136,6 +155,21 @@ export class GameScene_1 extends BaseGameScene {
         });
     }
 
+    enableGameInteraction(enabled) {
+        this.canSpawn = enabled;
+        this.leftBtn.setVisible(enabled);
+        this.rightBtn.setVisible(enabled);
+
+        if (enabled) {
+            this.leftBtn.setInteractive();
+            this.rightBtn.setInteractive();
+        } else {
+            this.leftBtn.disableInteractive();
+            this.rightBtn.disableInteractive();
+        }
+    }
+
+
     update() {
 
         if (!this.canSpawn) return;
@@ -165,7 +199,7 @@ export class GameScene_1 extends BaseGameScene {
             for (let i = this.fallingItems.length - 1; i >= 0; i--) {
                 const item = this.fallingItems[i];
                 if (item.active) {
-                    item.y += this.fallspeed; // fall speed
+                    item.y += this.failSpeed; // fall speed
                     if (item.y > this.maxY) {
                         item.setActive(false).setVisible(false);
                         this.fallingItems.splice(i, 1);
@@ -173,6 +207,52 @@ export class GameScene_1 extends BaseGameScene {
                 }
             }
         }
+    }
+
+
+
+    handleLose() {
+        if (this.gameState === 'gameLose') return;
+
+        if (!this.isSlowDown) {
+            this.failSpeed = this.slowDownSpeed;
+            this.isSlowDown = true;
+            console.log("Fail speed reduced for next rounds.");
+        } else {
+            this.currentFailCount = (this.currentFailCount || 0) + 1;
+            this.isGameActive = false;
+            this.gameState = 'gameLose';
+
+            this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
+            if (this.gameTimer) this.gameTimer.stop();
+            this.enableGameInteraction(false);
+            this.updateRoundUI(false);
+            this.fallingItems.forEach(item => item.setActive(false).setVisible(false));
+            this.showBubble('tryagain');
+        }
+    }
+
+    showWin() {
+        if (this.gameState === 'gameWin') return;
+
+        this.bubbleImage = this.add.image(this.centerX, this.cameras.main.height * 0.8, 'game1_npc_box_win2')
+            .setDepth(555).setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => {
+                this.bubbleImage.destroy();
+                this.characterBubble = this.add.image(this.centerX, this.cameras.main.height * 0.8,
+                    'game1_npc_box_' + this.genderKey + '_win3').setDepth(555).setInteractive({ useHandCursor: true })
+                    .on('pointerdown', () => {
+                        this.characterBubble.destroy();
+                        this.showObjectPanel();
+                    });
+
+            });
+    }
+
+    showObjectPanel() {
+        const objectPanel = new CustomPanel(this, 960, 600, 'game1_object_description');
+        objectPanel.setDepth(1000).setVisible(true);
+        objectPanel.setCloseCallBack(() => GameManager.backToMainStreet(this));
     }
 
     spawnRandomItem() {
@@ -191,20 +271,17 @@ export class GameScene_1 extends BaseGameScene {
 
 
     handleItemCollection(item) {
-        // Prevent double-triggering if the game is already in a win/loss state
-        // if (!this.isGameActive) return;
+        if (!this.isGameActive) return;
 
         if (item.isSuccessObject) {
-            console.log("Success item collected!");
-            item.destroy(); // Remove from screen
 
-            // Triggers the win flow defined in BaseGameScene
-            this.handleWinBeforeBubble();
-        } else {
-            console.log("Fail item collected!");
             item.destroy();
 
-            // Triggers the lose/try-again flow defined in BaseGameScene
+            this.handleWinBeforeBubble();
+        } else {
+
+            item.destroy();
+
             this.handleLose();
         }
     }

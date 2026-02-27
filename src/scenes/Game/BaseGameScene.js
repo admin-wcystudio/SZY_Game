@@ -1,6 +1,7 @@
 import { CustomButton } from '../../UI/Button.js';
 import UIHelper from '../../UI/UIHelper.js';
 import GameManager from '../GameManager.js';
+import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
 
 /**
  * Enhanced BaseGameScene
@@ -75,6 +76,8 @@ export default class BaseGameScene extends Phaser.Scene {
         this.gameUI = UIHelper.createGameCommonUI(this, bgKey,
             descriptionPages, this.targetRounds, this.config.depthUI);
 
+        this.gameUI.descriptionPanel.show();
+
         console.log('Game UI Initialized');
 
         // 2. Setup Timer
@@ -128,7 +131,7 @@ export default class BaseGameScene extends Phaser.Scene {
 
         const player_bubbles = [`${prefix}_npc_box4`, `${prefix}_npc_box5`];
         this.currentBubbleImg = this.add.image(centerX, centerY, targetKey)
-            .setDepth(300)
+            .setDepth(this.config.depthBubble)
             .setScrollFactor(0)
             .setInteractive({ useHandCursor: true });
         this.tweens.add({
@@ -281,7 +284,8 @@ export default class BaseGameScene extends Phaser.Scene {
 
         // Feedback Visuals
         this.showFeedbackLabel(true);
-        this.playFeedback(true, () => this.showBubble('win'));
+        this.showBubble('win');
+        //this.playFeedback(true, () =>);
     }
 
     _calculateTiming(isFinalWin) {
@@ -293,6 +297,24 @@ export default class BaseGameScene extends Phaser.Scene {
         } else {
             this.totalUsedSeconds += used;
             this.gameTimer.reset(this.roundPerSeconds);
+        }
+    }
+    handleWinAfterBubble() {
+        if (!this.isGameActive) return;
+        if (this.gameState === 'roundWin') {
+            this.nextRound();
+        } else {
+            if (this.gameState === 'gameWin') {
+                // Save game result
+                if (this.sceneIndex > 0) {
+                    GameManager.saveGameResult(this.sceneIndex, true, this.totalUsedSeconds);
+                    console.log(`遊戲 ${this.sceneIndex} 結束，總用時: ${this.totalUsedSeconds} 秒`);
+                }
+                this.showWin();
+                this.isGameActive = false;
+                this.gameState = 'completed';
+                if (typeof this.onGameWin === 'function') this.onGameWin();
+            }
         }
     }
 
@@ -373,6 +395,87 @@ export default class BaseGameScene extends Phaser.Scene {
         popupPanel.setDepth(1000);
     }
 
+    /**
+     * Reset the entire game back to initial state
+     */
+    resetWholeGame() {
+        // 1. Reset state variables
+        this.gameState = 'init';
+        this.roundIndex = 0;
+        this.totalUsedSeconds = 0;
+        this.isGameActive = false;
+        this.currentFailCount = 0;
+
+        // 2. Reset timer
+        if (this.gameTimer) {
+            this.gameTimer.stop();
+            this.gameTimer.reset(this.roundPerSeconds);
+        }
+
+        // 3. Clear bubbles and feedback labels
+        if (this.currentBubbleImg) {
+            this.currentBubbleImg.destroy();
+            this.currentBubbleImg = null;
+        }
+        if (this.feedbackLabel) {
+            this.feedbackLabel.destroy();
+            this.feedbackLabel = null;
+        }
+        if (this.label) {
+            this.label.destroy();
+            this.label = null;
+        }
+
+        // 4. Reset round UI icons back to initial state
+        if (this.gameUI?.roundStates) {
+            this.gameUI.roundStates.forEach(state => {
+                state.content.setTexture('game_gamechance');
+                state.isSuccess = null;
+            });
+        }
+
+        // 5. Disable game interaction
+        this.enableGameInteraction(false);
+
+        // 6. Call subclass-specific reset
+        this.resetForNewRound();
+
+        // 7. Re-show description panel to restart the flow
+        if (this.gameUI?.descriptionPanel) {
+            this.gameUI.descriptionPanel.show();
+        }
+
+        console.log('[Game] Whole game reset - restarting from beginning');
+    }
+
+    /**
+     * Move to next round (for multi-round games)
+     */
+    nextRound() {
+        this.roundIndex++;
+        this.gameState = 'init';
+        this.isGameActive = false;
+
+        // Reset timer for new round
+        if (this.gameTimer && !this.isContinuousTimer) {
+            this.gameTimer.reset(this.roundPerSeconds);
+        }
+
+        // Clear any feedback
+        if (this.feedbackLabel) {
+            this.feedbackLabel.destroy();
+            this.feedbackLabel = null;
+        }
+
+        // Subclass-specific reset
+        this.resetForNewRound();
+
+        // Start new round
+        this.startGame();
+
+        console.log(`[Game] Starting Round ${this.roundIndex + 1}`);
+    }
+
     // --- Abstract Hooks (To be implemented by your 7 games) ---
 
     setupGameObjects() {
@@ -386,7 +489,13 @@ export default class BaseGameScene extends Phaser.Scene {
     resetForNewRound() {
         // Example: reset sprite positions
     }
+    showObjectPanel() { }
 
+    showWin() { }
+
+    showLose(onComplete) {
+        if (onComplete) onComplete();
+    }
     // --- Utilities ---
 
     /**
