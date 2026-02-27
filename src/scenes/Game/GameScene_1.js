@@ -68,7 +68,7 @@ export class GameScene_1 extends BaseGameScene {
         this.createAnimations();
 
         this.initGame('game1_bg', 'game1_description', false, false, {
-            targetRounds: 3,
+            targetRounds: 1,
             roundPerSeconds: 6000,
             isAllowRoundFail: false,
             isContinuousTimer: true,
@@ -122,8 +122,8 @@ export class GameScene_1 extends BaseGameScene {
         this.isSlowDown = false;
         this.slowDownSpeed = this.failSpeed / 2;
 
+        this.successCount = 0;
 
-        // Create item sprites and store them in an array
         this.itemKeys = [
             'game1_failobject1',
             'game1_failobject2',
@@ -131,20 +131,20 @@ export class GameScene_1 extends BaseGameScene {
             'game1_failobject4',
             'game1_successobject'
         ];
-        // Shuffle the item order
         Phaser.Utils.Array.Shuffle(this.itemKeys);
 
+        this.fallingItemsGroup = this.physics.add.group();
         this.fallingItems = [];
         this.spawnTimer = 0;
 
-        this.physics.add.overlap(this.playerBasket, this.fallingItems, (basket, item) => {
+        // Setup overlap between basket and falling items group
+        this.physics.add.overlap(this.playerBasket, this.fallingItemsGroup, (basket, item) => {
             this.handleItemCollection(item);
         }, null, this);
     }
 
     moveDirection(direction) {
         const speed = 100;
-        // direction: 'left' or 'right'
         this.player.anims.play(`${this.genderKey}_${direction}_anim`, true);
         this.player.x += direction === 'left' ? -speed : speed;
     }
@@ -169,15 +169,68 @@ export class GameScene_1 extends BaseGameScene {
         }
     }
 
+    resetForNewRound() {
+        // Clear all falling items from both group and array
+        if (this.fallingItemsGroup) {
+            this.fallingItemsGroup.clear(true, true); // Remove and destroy all children
+        }
+
+        for (let i = this.fallingItems.length - 1; i >= 0; i--) {
+            const item = this.fallingItems[i];
+            if (item) {
+                item.destroy();
+            }
+        }
+        this.fallingItems = [];
+
+        // Reset spawn timer
+        this.lastSpawnTime = null;
+        this.canSpawn = false;
+
+        // Reset player position to center
+        if (this.player) {
+            this.player.x = this.centerX;
+            this.player.y = 1000;
+            this.player.anims.play(`${this.genderKey}_middle_anim`, true);
+        }
+
+        // Reset player basket to match player position and update physics body
+        if (this.playerBasket && this.playerBasket.body) {
+            const newX = this.centerX;
+            const newY = 1000 - 450; // Same calculation as in update
+
+            this.playerBasket.x = newX;
+            this.playerBasket.y = newY;
+
+            // Important: Update the physics body position explicitly
+            this.playerBasket.body.reset(newX, newY);
+        }
+
+        // Reset fail speed
+        this.failSpeed = 4;
+        this.isSlowDown = false;
+
+        // Reset success counter
+        this.successCount = 0;
+
+        console.log('[GameScene_1] Reset for new round');
+    }
+
 
     update() {
 
         if (!this.canSpawn) return;
 
         if (this.player && this.playerBasket) {
-            // Sync the invisible physics body
+            // Sync the invisible physics body - update both position and physics body
             this.playerBasket.x = this.player.x;
             this.playerBasket.y = this.player.y - 450;
+
+            // Update the physics body position to match
+            if (this.playerBasket.body) {
+                this.playerBasket.body.x = this.playerBasket.x - this.playerBasket.width / 2;
+                this.playerBasket.body.y = this.playerBasket.y - this.playerBasket.height / 2;
+            }
 
             // Redraw the visual box
             this.basketGfx.clear();
@@ -212,7 +265,7 @@ export class GameScene_1 extends BaseGameScene {
 
 
     handleLose() {
-        if (this.gameState === 'gameLose') return;
+        if (this.gameState === 'gameLose' || this.gameState === 'gameWin') return;
 
         if (!this.isSlowDown) {
             this.failSpeed = this.slowDownSpeed;
@@ -222,36 +275,43 @@ export class GameScene_1 extends BaseGameScene {
             this.currentFailCount = (this.currentFailCount || 0) + 1;
             this.isGameActive = false;
             this.gameState = 'gameLose';
-
+            this.fallingItems.forEach(item => item.destroy());
             this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
             if (this.gameTimer) this.gameTimer.stop();
             this.enableGameInteraction(false);
             this.updateRoundUI(false);
-            this.fallingItems.forEach(item => item.setActive(false).setVisible(false));
+
             this.showBubble('tryagain');
         }
     }
 
     showWin() {
-        if (this.gameState === 'gameWin') return;
 
-        this.bubbleImage = this.add.image(this.centerX, this.cameras.main.height * 0.8, 'game1_npc_box_win2')
+        // Second: Show generic win2 bubble
+        this.bubbleImage2 = this.add.image(this.centerX, this.cameras.main.height * 0.8, 'game1_npc_box_win')
             .setDepth(555).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => {
-                this.bubbleImage.destroy();
-                this.characterBubble = this.add.image(this.centerX, this.cameras.main.height * 0.8,
-                    'game1_npc_box_' + this.genderKey + '_win3').setDepth(555).setInteractive({ useHandCursor: true })
+                this.bubbleImage2.destroy();
+
+                // Third: Show gender-specific win3 bubble
+                this.bubbleImage3 = this.add.image(this.centerX, this.cameras.main.height * 0.8, `game1_npc_box_${this.genderKey}_win3`)
+                    .setDepth(555).setInteractive({ useHandCursor: true })
                     .on('pointerdown', () => {
-                        this.characterBubble.destroy();
+                        this.bubbleImage3.destroy();
                         this.showObjectPanel();
                     });
-
             });
+
     }
 
     showObjectPanel() {
-        const objectPanel = new CustomPanel(this, 960, 600, 'game1_object_description');
-        objectPanel.setDepth(1000).setVisible(true);
+        const objectPanel = new CustomPanel(this, 960, 600, [{
+            content: 'game1_object_description',
+            closeBtn: 'close_btn',
+            closeBtnClick: 'close_btn_click'
+        }]);
+        objectPanel.setDepth(1000);
+        objectPanel.show();
         objectPanel.setCloseCallBack(() => GameManager.backToMainStreet(this));
     }
 
@@ -260,12 +320,15 @@ export class GameScene_1 extends BaseGameScene {
         const key = Phaser.Utils.Array.GetRandom(this.itemKeys);
         // Spawn at random x, always y = minY
         const x = Phaser.Math.Between(this.minX, this.maxX);
+
+
         const y = this.minY;
         // Create the sprite
         const item = this.physics.add.sprite(x, y, key).setOrigin(0.5, 0.5).setDepth(2);
         item.isSuccessObject = (key === 'game1_successobject');
 
         item.setActive(true).setVisible(true);
+        this.fallingItemsGroup.add(item);
         this.fallingItems.push(item);
     }
 
@@ -274,14 +337,25 @@ export class GameScene_1 extends BaseGameScene {
         if (!this.isGameActive) return;
 
         if (item.isSuccessObject) {
-
             item.destroy();
 
-            this.handleWinBeforeBubble();
+            // Increment success counter
+            this.successCount++;
+            console.log(`Success item collected! Count: ${this.successCount}/${this.targetRounds}`);
+
+            // Update round UI to show progress (uses current roundIndex)
+            this.updateRoundUI(true);
+
+            // Only trigger win when all required successes are collected
+            if (this.successCount >= this.targetRounds) {
+                this.handleWinBeforeBubble();
+            } else {
+                // Increment roundIndex for next collection's UI update
+                this.roundIndex++;
+            }
         } else {
-
             item.destroy();
-
+            this.fallingItemsGroup.remove(item);
             this.handleLose();
         }
     }

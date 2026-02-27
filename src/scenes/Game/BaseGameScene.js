@@ -15,7 +15,7 @@ export default class BaseGameScene extends Phaser.Scene {
         this.config = {
             depthUI: 1000,
             depthBubble: 1500,
-            depthFeedback: 2000,
+            depthFeedback: 800,
             roundDuration: 30,
             targetRounds: 3,
             isAllowRoundFail: false,
@@ -70,6 +70,7 @@ export default class BaseGameScene extends Phaser.Scene {
         this.totalUsedSeconds = 0;
 
         const player = JSON.parse(localStorage.getItem('player') || '{"gender":"M"}');
+        this.playerGender = player.gender; // Store gender for use in win bubbles
         const descriptionPages = this._formatDescription(descriptionKey);
 
         // 1. Setup UI via Helper
@@ -113,6 +114,7 @@ export default class BaseGameScene extends Phaser.Scene {
         const bubbleMapping = {
             'intro': `${prefix}_npc_box_intro`,
             'win': `${prefix}_npc_box_win`,
+            'win_gender': `${prefix}_npc_box_win_gender`, // optional
             'gameWin': `${prefix}_npc_box_win`, // fallback to win bubble, can customize if needed
             'tryagain': `${prefix}_npc_box_tryagain`,
             'tryagain2': `${prefix}_npc_box_tryagain2`,
@@ -121,11 +123,22 @@ export default class BaseGameScene extends Phaser.Scene {
 
         let targetKey = bubbleMapping[type];
 
-        // Check for round-specific win bubble (e.g., game6_npc_box_win_round2)
+        // Check for gender-specific or round-specific win bubble
         if (type === 'win' || type === 'gameWin') {
-            const specificRoundKey = `${prefix}_npc_box_win_round${this.roundIndex + 1}`;
-            if (this.textures.exists(specificRoundKey)) {
-                targetKey = specificRoundKey;
+            // First priority: gender-specific win bubble (e.g., game1_npc_box_boy_win)
+            if (gender) {
+                const genderKey = gender === 'M' ? 'boy' : 'girl';
+                const genderWinKey = `${prefix}_npc_box_${genderKey}_win`;
+                if (this.textures.exists(genderWinKey)) {
+                    targetKey = genderWinKey;
+                }
+            }
+            // Second priority: round-specific win bubble (e.g., game6_npc_box_win_round2)
+            if (targetKey === bubbleMapping[type]) {
+                const specificRoundKey = `${prefix}_npc_box_win_round${this.roundIndex + 1}`;
+                if (this.textures.exists(specificRoundKey)) {
+                    targetKey = specificRoundKey;
+                }
             }
         }
 
@@ -284,7 +297,7 @@ export default class BaseGameScene extends Phaser.Scene {
 
         // Feedback Visuals
         this.showFeedbackLabel(true);
-        this.showBubble('win');
+        this.showBubble('win', this.playerGender);
         //this.playFeedback(true, () =>);
     }
 
