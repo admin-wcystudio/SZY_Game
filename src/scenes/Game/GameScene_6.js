@@ -67,19 +67,46 @@ export class GameScene_6 extends BaseGameScene {
 
     setupGameObjects() {
 
-        this.border1 = this.add.image(this.centerX - 300, this.centerY, 'game6_border1').setDepth(500).setVisible(true);
-        this.border2 = this.add.image(this.centerX + 300, this.centerY, 'game6_border2').setDepth(500).setVisible(true);
+        this.border1 = this.add.image(this.centerX - 400, this.centerY, 'game6_border1').setDepth(500).setVisible(true);
+        this.border2 = this.add.image(this.centerX + 400, this.centerY, 'game6_border2').setDepth(500).setVisible(true);
+
+        // Define snap positions (grey circles) for both borders
+        // Border 1 (left) - 4 positions in a 2x2 grid
+        this.snapPositions = [
+            // Border 1 positions
+            { x: this.centerX - 480, y: this.centerY - 100 },
+            { x: this.centerX - 320, y: this.centerY - 100 },
+            { x: this.centerX - 480, y: this.centerY + 100 },
+            { x: this.centerX - 320, y: this.centerY + 100 },
+            // Border 2 positions (right)
+            { x: this.centerX + 320, y: this.centerY - 100 },
+            { x: this.centerX + 480, y: this.centerY - 100 },
+            { x: this.centerX + 320, y: this.centerY + 100 },
+            { x: this.centerX + 480, y: this.centerY + 100 }
+        ];
+
+        this.snapRadius = 90; // Distance threshold for snapping
+
+        // Debug graphics - draw snap positions
+        this.debugGraphics = this.add.graphics();
+        this.debugGraphics.lineStyle(2, 0xff0000, 0.5);
+        this.debugGraphics.fillStyle(0xff0000, 0.2);
+        this.snapPositions.forEach(pos => {
+            this.debugGraphics.strokeCircle(pos.x, pos.y, 60); // Draw outer circle
+            this.debugGraphics.fillCircle(pos.x, pos.y, 5); // Draw center point
+        });
+        this.debugGraphics.setDepth(999); // Just below borders
 
         // Define spawn positions (random positions around the center, avoiding borders)
         const spawnPositions = [
-            { x: this.centerX - 100, y: this.centerY - 200 },
-            { x: this.centerX + 100, y: this.centerY - 200 },
-            { x: this.centerX - 200, y: this.centerY - 100 },
-            { x: this.centerX + 200, y: this.centerY - 100 },
-            { x: this.centerX - 100, y: this.centerY + 100 },
-            { x: this.centerX + 100, y: this.centerY + 100 },
-            { x: this.centerX - 200, y: this.centerY + 200 },
-            { x: this.centerX + 200, y: this.centerY + 200 }
+            { x: this.centerX - 780, y: this.centerY - 100 },
+            { x: this.centerX - 800, y: this.centerY + 100 },
+            { x: this.centerX, y: this.centerY + 200 },
+            { x: this.centerX, y: this.centerY - 200 },
+            { x: this.centerX + 100, y: this.centerY },
+            { x: this.centerX - 100, y: this.centerY },
+            { x: this.centerX + 800, y: this.centerY - 100 },
+            { x: this.centerX + 780, y: this.centerY + 100 }
         ];
 
         // Shuffle positions
@@ -89,7 +116,7 @@ export class GameScene_6 extends BaseGameScene {
         for (let i = 1; i <= 8; i++) {
             const pos = shuffledPositions[i - 1];
             const obj = this.add.image(pos.x, pos.y, `game6_object${i}`)
-                .setDepth(501)
+                .setDepth(505)
                 .setInteractive({ draggable: true })
                 .setVisible(false);
 
@@ -106,6 +133,21 @@ export class GameScene_6 extends BaseGameScene {
             gameObject.y = dragY;
         });
 
+        // Add dragend event for snapping
+        this.input.on('dragend', (pointer, gameObject) => {
+            const snapPos = this.findNearestSnapPosition(gameObject.x, gameObject.y);
+            if (snapPos) {
+                // Snap to position with animation
+                this.tweens.add({
+                    targets: gameObject,
+                    x: snapPos.x,
+                    y: snapPos.y,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+            }
+        });
+
         // Border zones for collision detection
         this.border1_correctObjects = [2, 3, 6, 8];
         this.border2_correctObjects = [1, 4, 5, 7];
@@ -115,6 +157,21 @@ export class GameScene_6 extends BaseGameScene {
         this.border2Zone = new Phaser.Geom.Rectangle(
             this.border2.x - 150, this.border2.y - 200, 300, 400
         );
+    }
+
+    findNearestSnapPosition(x, y) {
+        let nearestPos = null;
+        let minDistance = this.snapRadius;
+
+        for (let pos of this.snapPositions) {
+            const distance = Phaser.Math.Distance.Between(x, y, pos.x, pos.y);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestPos = pos;
+            }
+        }
+
+        return nearestPos;
     }
 
     enableGameInteraction(enable) {

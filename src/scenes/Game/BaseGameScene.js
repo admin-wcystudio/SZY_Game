@@ -78,7 +78,6 @@ export default class BaseGameScene extends Phaser.Scene {
         this.playerGender = player.gender; // Store gender for use in win bubbles
         const descriptionPages = this._formatDescription(descriptionKey);
 
-        // 1. Setup UI via Helper (bgKey can be null for video backgrounds)
         this.gameUI = UIHelper.createGameCommonUI(this, bgKey,
             descriptionPages, this.targetRounds, this.config.depthUI);
 
@@ -86,13 +85,8 @@ export default class BaseGameScene extends Phaser.Scene {
 
         console.log('Game UI Initialized');
 
-        // 2. Setup Timer
         this._setupTimer();
-
-        // 3. Subclass Specific Objects
         this.setupGameObjects();
-
-        // 4. Handle Entry Flow
         this._handleEntryFlow(skipIntroBubble, autoStart, player.gender);
     }
 
