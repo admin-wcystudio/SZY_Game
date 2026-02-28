@@ -23,8 +23,8 @@ export class GameScene_5 extends BaseGameScene {
         this.load.image('game5_npc_box4', `${path}game5_npc_box6.png`);
         this.load.image('game5_npc_box5', `${path}game5_npc_box8.png`);
 
-        this.load.image('game5_npc_win', `${path}game5_npc_box10.png`);
-        this.load.image('game5_npc_tryagain', `${path}game5_npc_box11.png`);
+        this.load.image('game5_npc_box_win', `${path}game5_npc_box10.png`);
+        this.load.image('game5_npc_box_tryagain', `${path}game5_npc_box11.png`);
         this.load.image('game5_npc_box_intro', `${path}game5_npc_box3.png`);
 
         this.load.image('game5_boy_npc_box1', `${path}game5_npc_boy_box4.png`);
@@ -108,7 +108,6 @@ export class GameScene_5 extends BaseGameScene {
         ]
 
         this.questionPanel = new QuestionPanel(this, allQuestions, () => {
-            this.handleWinBeforeBubble();
         });
         this.questionPanel.setDepth(559).setVisible(false);
     }
@@ -126,10 +125,30 @@ export class GameScene_5 extends BaseGameScene {
         this.setupGameObjects(); // 重新抽題並建立 Panel
         this.questionPanel.setVisible(true);
     }
+
     showWin() {
         this.questionPanel.setVisible(false);
         this.time.delayedCall(1500, () => {
             GameManager.backToMainStreet(this);
+        });
+    }
+
+    showLose(onComplete) {
+        // Stop and destroy the current video
+        if (this.bgVideo) {
+            this.bgVideo.stop();
+            this.bgVideo.destroy();
+        }
+
+        // Play the fail background video
+        this.bgVideo = this.add.video(960, 540, `${this.genderKey}_bg2`)
+            .setDepth(-1)
+            .setOrigin(0.5, 0.5);
+        this.bgVideo.play(true);
+
+        // Delay before showing fail panel to let the video play
+        this.time.delayedCall(3000, () => {
+            if (onComplete) onComplete();
         });
     }
 

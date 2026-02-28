@@ -382,7 +382,7 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
         this.add([this.contentImage]);
 
         // 2. 確認按鈕 (初始隱藏)
-        this.confirmBtn = new CustomButton(scene, 0, 330,
+        this.confirmBtn = new CustomButton(scene, 0, 380,
             'game5_confirm_button', 'game5_confirm_button_select', () => {
                 this.checkAnswer();
             });
@@ -404,9 +404,10 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
         const options = q.options || q.option; // Support both 'options' and 'option'
         options.forEach((optKey, index) => {
             const y = -100 + index * 120;
-            const btn = new CustomButton(this.scene, 0, y, optKey, `${optKey}_select`, () => {
-                this.selectedAnswer(btn, index);
-            }).setScale(0.9);
+            const btn = new CustomButton(this.scene, 0, y, optKey, `${optKey}_select`,
+                () => {
+                    this.selectedAnswer(btn, index);
+                });
 
             this.add(btn); // 加入 Container
             this.optionButtons.push(btn); // 加入陣列追蹤
@@ -428,8 +429,8 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
     checkAnswer() {
         const q = this.questions[this.currentIndex];
 
+        console.log(`Selected: ${this.selectedAnswerIndex}, Correct: ${q.answer}`);
         if (this.selectedAnswerIndex === q.answer) {
-            console.log("答對了");
             if (this.scene.gameTimer) this.scene.gameTimer.stop();
 
             // 更新 Scene 的圓圈 UI
@@ -437,23 +438,48 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
                 this.scene.updateRoundUI(true);
                 this.scene.roundIndex++;
             }
-            this.showAddOn(q.addOn);
+            // Support both addOn (old) and nextDialog/characterDialog (new) formats
+            const dialogKey = q.addOn || q.nextDialog;
+            if (dialogKey) {
+                this.showAddOn(dialogKey, q.characterDialog);
+            } else {
+                this.nextQuestion();
+            }
         } else {
             console.log("答錯了 , correct : " + q.answer);
-            // 呼叫 BaseGameScene 的失敗流程 (彈出 Try Again 泡泡)
+            // Hide the question panel to show bubbles properly
+            this.setVisible(false);
+            // Call handleLose which shows fail label, tryagain bubble, and fail panel
             this.scene.handleLose();
         }
     }
 
-    showAddOn(addOnKey) {
-        this.optionButtons.forEach(btn => btn.setVisible(true));
-        this.contentImage.setVisible(true);
+    showAddOn(dialogKey, characterDialogKey) {
+        this.optionButtons.forEach(btn => btn.setVisible(false));
+        this.contentImage.setVisible(false);
+        this.confirmBtn.setVisible(false);
 
-        const addOnImg = this.scene.add.image(0, 50, addOnKey).setInteractive({ useHandCursor: true });
-        this.add(addOnImg);
+        const dialogImg = this.scene.add.image(0, 350, dialogKey).setInteractive({ useHandCursor: true });
+        this.add(dialogImg);
 
-        addOnImg.once('pointerdown', () => {
-            addOnImg.destroy();
+        dialogImg.once('pointerdown', () => {
+            dialogImg.destroy();
+
+            // If there's a character dialogue, show it next
+            if (characterDialogKey) {
+                this.showCharacterDialog(characterDialogKey);
+            } else {
+                this.nextQuestion();
+            }
+        });
+    }
+
+    showCharacterDialog(characterDialogKey) {
+        const charImg = this.scene.add.image(0, 350, characterDialogKey).setInteractive({ useHandCursor: true });
+        this.add(charImg);
+
+        charImg.once('pointerdown', () => {
+            charImg.destroy();
             this.nextQuestion();
         });
     }
@@ -465,10 +491,15 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
                 this.scene.gameTimer.reset(this.scene.roundPerSeconds);
                 this.scene.gameTimer.start();
             }
+            this.confirmBtn.setVisible(true);
+            this.selectedAnswerIndex = -1;
             this.showQuestion();
         } else {
-            this.destroy(); // 3 題都答完了
+            console.log('All questions answered correctly!');
+            this.scene.onRoundWin();
             if (this.onComplete) this.onComplete();
+            this.destroy(); // 3 題都答完了
+
         }
     }
 }

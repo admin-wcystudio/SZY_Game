@@ -147,7 +147,6 @@ export default class BaseGameScene extends Phaser.Scene {
             }
         }
 
-        const player_bubbles = [`${prefix}_npc_box4`, `${prefix}_npc_box5`];
         this.currentBubbleImg = this.add.image(centerX, centerY, targetKey)
             .setDepth(this.config.depthBubble)
             .setScrollFactor(0)
@@ -169,19 +168,9 @@ export default class BaseGameScene extends Phaser.Scene {
             if (options.onClose) options.onClose();
         };
         if (type === 'intro') {
-            this.currentBubbleImg.on('pointerdown', () => {
-                const hasGenderAssets = this.textures.exists(player_bubbles[0]);
-                if (gender && hasGenderAssets) {
-                    const playerKey = (gender === 'M') ? player_bubbles[0] : player_bubbles[1];
-                    this.currentBubbleImg.setTexture(playerKey);
-                    this.currentBubbleImg.off('pointerdown').once('pointerdown', () => {
-                        closeBubble();
-                        this.startGame();
-                    });
-                } else {
-                    closeBubble();
-                    this.startGame();
-                }
+            this.currentBubbleImg.once('pointerdown', () => {
+                closeBubble();
+                this.startGame();
             });
         } else if (type === 'win') {
             this.currentBubbleImg.once('pointerdown', () => {
