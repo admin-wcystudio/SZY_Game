@@ -17,7 +17,7 @@ export class GameScene_4 extends BaseGameScene {
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
 
-        this.load.image('game4_npc_box_intro', `${path}game4_npc_box3.png`);
+        this.load.image('game4_npc_box_intro', `${path}game4_npc_box5.png`);
         this.load.image('game4_npc_box_win', `${path}game4_npc_box3.png`);
         this.load.image('game4_npc_box_tryagain', `${path}game4_npc_box4.png`);
 
