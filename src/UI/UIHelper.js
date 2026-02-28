@@ -102,7 +102,7 @@ export default class UIHelper {
         for (let i = 0; i < targetRounds; i++) {
             const icon = scene.add.image(1755 - (i * 145), 200, 'game_gamechance')
                 .setScale(0.8)
-                .setDepth(555);
+                .setDepth(1000);
             roundStates.push({ round: i + 1, content: icon, isSuccess: false });
         }
 

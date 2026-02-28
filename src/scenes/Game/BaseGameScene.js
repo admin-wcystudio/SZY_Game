@@ -49,6 +49,11 @@ export default class BaseGameScene extends Phaser.Scene {
 
     /**
      * Unified Initialization
+     * @param {string|null} bgKey - Background image key (null if using video background)
+     * @param {string|array} descriptionKey - Description panel content key(s)
+     * @param {boolean} skipIntroBubble - Skip intro bubble
+     * @param {boolean} autoStart - Auto start game
+     * @param {object} customConfig - Custom configuration object
      */
     initGame(bgKey, descriptionKey, skipIntroBubble = false, autoStart = false, customConfig = {}) {
 
@@ -73,7 +78,7 @@ export default class BaseGameScene extends Phaser.Scene {
         this.playerGender = player.gender; // Store gender for use in win bubbles
         const descriptionPages = this._formatDescription(descriptionKey);
 
-        // 1. Setup UI via Helper
+        // 1. Setup UI via Helper (bgKey can be null for video backgrounds)
         this.gameUI = UIHelper.createGameCommonUI(this, bgKey,
             descriptionPages, this.targetRounds, this.config.depthUI);
 

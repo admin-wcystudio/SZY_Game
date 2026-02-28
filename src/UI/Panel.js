@@ -364,3 +364,111 @@ export class CustomFailPanel extends Phaser.GameObjects.Container {
     }
 
 }
+
+
+export class QuestionPanel extends Phaser.GameObjects.Container {
+    constructor(scene, contents, onComplete) {
+        super(scene, 960, 540);
+        this.scene = scene;
+        this.onComplete = onComplete;
+        this.currentIndex = 0;
+        this.selectedAnswerIndex = -1;
+
+        // Store the questions array
+        this.questions = contents;
+
+        // Create image for displaying question content
+        this.contentImage = scene.add.image(0, 50, '').setDepth(200).setVisible(false);
+        this.add([this.contentImage]);
+
+        // 2. 確認按鈕 (初始隱藏)
+        this.confirmBtn = new CustomButton(scene, 0, 330,
+            'game5_confirm_button', 'game5_confirm_button_select', () => {
+                this.checkAnswer();
+            });
+        this.add(this.confirmBtn);
+
+        this.optionButtons = [];
+        this.showQuestion();
+        scene.add.existing(this);
+    }
+
+    showQuestion() {
+        const q = this.questions[this.currentIndex];
+        this.contentImage.setTexture(q.content).setVisible(true);
+        if (this.optionButtons) {
+            this.optionButtons.forEach(btn => btn.destroy());
+        }
+        this.optionButtons = [];
+
+        const options = q.options || q.option; // Support both 'options' and 'option'
+        options.forEach((optKey, index) => {
+            const y = -100 + index * 120;
+            const btn = new CustomButton(this.scene, 0, y, optKey, `${optKey}_select`, () => {
+                this.selectedAnswer(btn, index);
+            }).setScale(0.9);
+
+            this.add(btn); // 加入 Container
+            this.optionButtons.push(btn); // 加入陣列追蹤
+        });
+    }
+
+    handleSelect(index) {
+        // Deprecated: use selectedAnswer instead
+        this.selectedAnswer(this.optionButtons[index], index);
+    }
+    selectedAnswer(gameObject, index) {
+        // Clear tint for all buttons
+        this.optionButtons.forEach(btn => btn.clearTint());
+        // Set tint for selected button
+        gameObject.setTint(0xaaaaaa);
+        this.selectedAnswerIndex = index;
+    }
+
+    checkAnswer() {
+        const q = this.questions[this.currentIndex];
+
+        if (this.selectedAnswerIndex === q.answer) {
+            console.log("答對了");
+            if (this.scene.gameTimer) this.scene.gameTimer.stop();
+
+            // 更新 Scene 的圓圈 UI
+            if (this.scene.updateRoundUI) {
+                this.scene.updateRoundUI(true);
+                this.scene.roundIndex++;
+            }
+            this.showAddOn(q.addOn);
+        } else {
+            console.log("答錯了 , correct : " + q.answer);
+            // 呼叫 BaseGameScene 的失敗流程 (彈出 Try Again 泡泡)
+            this.scene.handleLose();
+        }
+    }
+
+    showAddOn(addOnKey) {
+        this.optionButtons.forEach(btn => btn.setVisible(true));
+        this.contentImage.setVisible(true);
+
+        const addOnImg = this.scene.add.image(0, 50, addOnKey).setInteractive({ useHandCursor: true });
+        this.add(addOnImg);
+
+        addOnImg.once('pointerdown', () => {
+            addOnImg.destroy();
+            this.nextQuestion();
+        });
+    }
+
+    nextQuestion() {
+        this.currentIndex++;
+        if (this.currentIndex < this.questions.length) {
+            if (this.scene.gameTimer) {
+                this.scene.gameTimer.reset(this.scene.roundPerSeconds);
+                this.scene.gameTimer.start();
+            }
+            this.showQuestion();
+        } else {
+            this.destroy(); // 3 題都答完了
+            if (this.onComplete) this.onComplete();
+        }
+    }
+}
