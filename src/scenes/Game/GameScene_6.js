@@ -51,7 +51,7 @@ export class GameScene_6 extends BaseGameScene {
 
         this.initGame('game6_bg', 'game6_description', false, false, {
             targetRounds: 1,
-            roundPerSeconds: 30,
+            roundPerSeconds: 60,
             isAllowRoundFail: false,
             isContinuousTimer: false,
             sceneIndex: 6
@@ -70,34 +70,25 @@ export class GameScene_6 extends BaseGameScene {
         this.border1 = this.add.image(this.centerX - 400, this.centerY, 'game6_border1').setDepth(500).setVisible(true);
         this.border2 = this.add.image(this.centerX + 400, this.centerY, 'game6_border2').setDepth(500).setVisible(true);
 
-        // Define snap positions (grey circles) for both borders
+        // Track which object is at each position
+        this.positionObjects = {};
+
         // Border 1 (left) - 4 positions in a 2x2 grid
         this.snapPositions = [
             // Border 1 positions
-            { x: this.centerX - 480, y: this.centerY - 100 },
-            { x: this.centerX - 320, y: this.centerY - 100 },
-            { x: this.centerX - 480, y: this.centerY + 100 },
-            { x: this.centerX - 320, y: this.centerY + 100 },
+            { x: this.centerX - 485, y: this.centerY - 90, isOccupied: false },
+            { x: this.centerX - 320, y: this.centerY - 90, isOccupied: false },
+            { x: this.centerX - 485, y: this.centerY + 90, isOccupied: false },
+            { x: this.centerX - 320, y: this.centerY + 90, isOccupied: false },
             // Border 2 positions (right)
-            { x: this.centerX + 320, y: this.centerY - 100 },
-            { x: this.centerX + 480, y: this.centerY - 100 },
-            { x: this.centerX + 320, y: this.centerY + 100 },
-            { x: this.centerX + 480, y: this.centerY + 100 }
+            { x: this.centerX + 320, y: this.centerY - 90, isOccupied: false },
+            { x: this.centerX + 485, y: this.centerY - 90, isOccupied: false },
+            { x: this.centerX + 320, y: this.centerY + 90, isOccupied: false },
+            { x: this.centerX + 485, y: this.centerY + 90, isOccupied: false }
         ];
 
         this.snapRadius = 90; // Distance threshold for snapping
 
-        // Debug graphics - draw snap positions
-        this.debugGraphics = this.add.graphics();
-        this.debugGraphics.lineStyle(2, 0xff0000, 0.5);
-        this.debugGraphics.fillStyle(0xff0000, 0.2);
-        this.snapPositions.forEach(pos => {
-            this.debugGraphics.strokeCircle(pos.x, pos.y, 60); // Draw outer circle
-            this.debugGraphics.fillCircle(pos.x, pos.y, 5); // Draw center point
-        });
-        this.debugGraphics.setDepth(999); // Just below borders
-
-        // Define spawn positions (random positions around the center, avoiding borders)
         const spawnPositions = [
             { x: this.centerX - 780, y: this.centerY - 100 },
             { x: this.centerX - 800, y: this.centerY + 100 },
@@ -109,7 +100,8 @@ export class GameScene_6 extends BaseGameScene {
             { x: this.centerX + 780, y: this.centerY + 100 }
         ];
 
-        // Shuffle positions
+
+
         const shuffledPositions = Phaser.Utils.Array.Shuffle([...spawnPositions]);
 
         this.objects = [];
@@ -129,92 +121,135 @@ export class GameScene_6 extends BaseGameScene {
 
         // Set up drag events
         this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+
             gameObject.x = dragX;
             gameObject.y = dragY;
         });
 
         // Add dragend event for snapping
         this.input.on('dragend', (pointer, gameObject) => {
-            const snapPos = this.findNearestSnapPosition(gameObject.x, gameObject.y);
-            if (snapPos) {
+            const result = this.findNearestSnapPosition(gameObject.x, gameObject.y, gameObject);
+            if (result.snapPos) {
                 // Snap to position with animation
                 this.tweens.add({
                     targets: gameObject,
-                    x: snapPos.x,
-                    y: snapPos.y,
+                    x: result.snapPos.x,
+                    y: result.snapPos.y,
                     duration: 150,
-                    ease: 'Power2'
+                    ease: 'Power2',
+                    onComplete: () => {
+                        // Check if all border 1 positions are occupied
+                        this.checkIfAllOccupied();
+                    }
                 });
+            } else {
+                console.log(`[SNAP] No snap position found within ${this.snapRadius}px radius`);
             }
         });
 
-        // Border zones for collision detection
-        this.border1_correctObjects = [2, 3, 6, 8];
-        this.border2_correctObjects = [1, 4, 5, 7];
-        this.border1Zone = new Phaser.Geom.Rectangle(
-            this.border1.x - 150, this.border1.y - 200, 300, 400
-        );
-        this.border2Zone = new Phaser.Geom.Rectangle(
-            this.border2.x - 150, this.border2.y - 200, 300, 400
-        );
+        this.border1_correctObjects = [2, 5, 6, 8];
+        this.border2_correctObjects = [1, 3, 4, 7];
+        //this.drawDebug();
+
     }
 
-    findNearestSnapPosition(x, y) {
+    findNearestSnapPosition(x, y, gameObject = null) {
         let nearestPos = null;
+        let nearestIndex = -1;
         let minDistance = this.snapRadius;
 
-        for (let pos of this.snapPositions) {
+        for (let i = 0; i < this.snapPositions.length; i++) {
+            const pos = this.snapPositions[i];
             const distance = Phaser.Math.Distance.Between(x, y, pos.x, pos.y);
             if (distance < minDistance) {
                 minDistance = distance;
                 nearestPos = pos;
+                nearestIndex = i;
             }
         }
 
-        return nearestPos;
+        if (nearestPos && gameObject) {
+            // Remove this object from any previous position
+            Object.keys(this.positionObjects).forEach(key => {
+                if (this.positionObjects[key] === gameObject.objectId) {
+                    delete this.positionObjects[key];
+                    this.snapPositions[key].isOccupied = false;
+                }
+            });
+
+            // Track this object at the new position
+            this.positionObjects[nearestIndex] = gameObject.objectId;
+            nearestPos.isOccupied = true;
+
+            // Debug log for snap positions
+            if (nearestIndex >= 0 && nearestIndex <= 3) {
+                console.log(`[SNAP] Object ${gameObject.objectId} snapped to snapPosition[${nearestIndex}] at border1`);
+            } else if (nearestIndex >= 4 && nearestIndex <= 7) {
+                console.log(`[SNAP] Object ${gameObject.objectId} snapped to snapPosition[${nearestIndex}] at border2`);
+            }
+        }
+
+        return { snapPos: nearestPos, index: nearestIndex };
+    }
+
+    checkIfAllOccupied() {
+        // Check if all positions (both borders) are occupied
+        const allPositions = [0, 1, 2, 3, 4, 5, 6, 7];
+        const allOccupied = allPositions.every(i => this.positionObjects.hasOwnProperty(i));
+
+        if (allOccupied) {
+            console.log('[CHECK] All positions occupied (both borders)!');
+            console.log('[CHECK] Current positions:', this.positionObjects);
+            console.log('[CHECK] Click confirm button to check answer');
+        }
     }
 
     enableGameInteraction(enable) {
-        this.objects.forEach(obj => {
+        this.objects.forEach((obj, index) => {
             obj.setVisible(enable);
             obj.setInteractive(enable);
+            if (enable) {
+                console.log(`[INTERACTION] Object ${obj.objectId} at (${Math.round(obj.x)}, ${Math.round(obj.y)}) - visible: ${obj.visible}, interactive: ${obj.input ? obj.input.enabled : 'no input'}`);
+            }
         });
         if (this.confirmBtn) {
             this.confirmBtn.setVisible(enable);
+            console.log(`[INTERACTION] Confirm button visibility: ${enable}`);
         }
     }
 
     checkAnswer() {
-        let allCorrect = true;
+        console.log('[ANSWER] Checking answer...');
 
-        for (let obj of this.objects) {
-            const objId = obj.objectId;
-            const inBorder1 = this.border1Zone.contains(obj.x, obj.y);
-            const inBorder2 = this.border2Zone.contains(obj.x, obj.y);
+        // Check border 1 positions (0-3)
+        const border1Positions = [0, 1, 2, 3];
+        const border1Objects = border1Positions.map(i => this.positionObjects[i]).filter(id => id !== undefined);
 
-            const shouldBeInBorder1 = this.border1_correctObjects.includes(objId);
-            const shouldBeInBorder2 = this.border2_correctObjects.includes(objId);
+        // Check border 2 positions (4-7)
+        const border2Positions = [4, 5, 6, 7];
+        const border2Objects = border2Positions.map(i => this.positionObjects[i]).filter(id => id !== undefined)
+        // Check if border 1 has all correct objects
+        const border1Correct = this.border1_correctObjects.every(objId => border1Objects.includes(objId)) &&
+            border1Objects.length === this.border1_correctObjects.length;
 
-            if (shouldBeInBorder1 && !inBorder1) {
-                allCorrect = false;
-                break;
-            }
-            if (shouldBeInBorder2 && !inBorder2) {
-                allCorrect = false;
-                break;
-            }
-        }
+        // Check if border 2 has all correct objects
+        const border2Correct = this.border2_correctObjects.every(objId => border2Objects.includes(objId)) &&
+            border2Objects.length === this.border2_correctObjects.length;
 
-        if (allCorrect) {
-            console.log('All objects correctly placed!');
+        if (border1Correct && border2Correct) {
+            console.log('[ANSWER] ✓ All objects correctly placed in both borders!');
             this.onRoundWin();
         } else {
-            console.log('Incorrect placement!');
+            console.log('[ANSWER] ✗ Incorrect placement!');
             this.handleLose();
         }
     }
 
     resetForNewRound() {
+        // Reset position tracking
+        this.positionObjects = {};
+        this.snapPositions.forEach(pos => pos.isOccupied = false);
+
         // Reset objects to original positions
         this.objects.forEach(obj => {
             obj.x = obj.originalX;
@@ -229,5 +264,19 @@ export class GameScene_6 extends BaseGameScene {
         this.time.delayedCall(1500, () => {
             GameManager.backToMainStreet(this);
         });
+    }
+
+    drawDebug() {
+
+        // Debug graphics - draw snap positions
+        this.debugGraphics = this.add.graphics();
+        this.debugGraphics.lineStyle(2, 0xff0000, 0.5);
+        this.debugGraphics.fillStyle(0xff0000, 0.2);
+        this.snapPositions.forEach(pos => {
+            this.debugGraphics.strokeCircle(pos.x, pos.y, 60); // Draw outer circle
+            this.debugGraphics.fillCircle(pos.x, pos.y, 5); // Draw center point
+        });
+        this.debugGraphics.setDepth(999); // Just below borders
+
     }
 }
