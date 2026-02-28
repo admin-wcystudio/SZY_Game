@@ -348,7 +348,7 @@ export class GameScene_1 extends BaseGameScene {
 
             // Only trigger win when all required successes are collected
             if (this.successCount >= this.targetRounds) {
-                this.handleWinBeforeBubble();
+                this.onRoundWin();
             } else {
                 // Increment roundIndex for next collection's UI update
                 this.roundIndex++;

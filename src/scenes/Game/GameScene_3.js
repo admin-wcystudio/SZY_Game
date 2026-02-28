@@ -200,7 +200,7 @@ export class GameScene_3 extends BaseGameScene {
                 if (this.matchedPairs === 5) {
                     console.log('All pairs matched! You win!');
                     this.time.delayedCall(500, () => {
-                        this.handleWinBeforeBubble();
+                        this.onRoundWin();
                     });
                 }
 

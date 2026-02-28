@@ -47,6 +47,23 @@ export class GameScene_4 extends BaseGameScene {
             sceneIndex: 4
         });
 
+        this.allowToStart = false;
+
+    }
+
+    update() {
+        if (!this.arrow || this.isHit || !this.allowToStart) return;
+
+        // Bouncing logic
+        this.arrow.x += this.arrowSpeed;
+
+        if (this.arrow.x >= 1580) {
+            this.arrow.x = 1580;
+            this.arrowSpeed = -Math.abs(this.arrowSpeed); // Turn left
+        } else if (this.arrow.x <= 350) {
+            this.arrow.x = 350;
+            this.arrowSpeed = Math.abs(this.arrowSpeed); // Turn right
+        }
     }
 
     setupGameObjects() {
@@ -57,7 +74,7 @@ export class GameScene_4 extends BaseGameScene {
         // Define success ranges for each bar (min and max x positions)
         this.hitRanges = [
             { min: 200, max: 650 },  // Bar 1 success range
-            { min: 1250, max: 1600 },  // Bar 2 success range
+            { min: 1250, max: 1550 },  // Bar 2 success range
             { min: 650, max: 1050 }   // Bar 3 success range
         ];
 
@@ -75,31 +92,11 @@ export class GameScene_4 extends BaseGameScene {
         });
     }
 
-    update() {
-        if (!this.arrow || this.isHit) return;
-
-        // Bouncing logic
-        this.arrow.x += this.arrowSpeed;
-
-        // Bar range approximation (480 to 1440)
-        if (this.arrow.x >= 1420) {
-            this.arrow.x = 1420;
-            this.arrowSpeed = -Math.abs(this.arrowSpeed); // Turn left
-        } else if (this.arrow.x <= 500) {
-            this.arrow.x = 500;
-            this.arrowSpeed = Math.abs(this.arrowSpeed); // Turn right
-        }
-    }
-
     handleHitButtonClick() {
         if (this.isHit || !this.isGameActive) return; // Prevent multiple clicks
 
         this.isHit = true;
-
-        // Stop the arrow movement
         this.arrowSpeed = 0;
-
-        // Check if hit was successful based on current round
         this.checkHitSuccess();
     }
 
@@ -112,28 +109,84 @@ export class GameScene_4 extends BaseGameScene {
 
         // Check if arrow is within the success range
         if (arrowX >= range.min && arrowX <= range.max) {
-            // Success!
-            this.successfulHits++;
-            console.log(`Hit ${this.successfulHits}/3 successful!`);
-
-            // Check if all 3 hits are successful
-            if (this.successfulHits >= 3) {
-                // Win the game!
-                this.time.delayedCall(500, () => {
-                    this.handleWinBeforeBubble();
-                });
-            } else {
-                // Move to next bar
-                this.time.delayedCall(500, () => {
-                    this.nextBar();
-                });
-            }
+            this.onRoundWin();
         } else {
-            // Failed - outside the range
             console.log('Hit failed - outside range');
+            // Update roundIndex to current attempt so correct UI element is marked as failed
+            this.roundIndex = this.successfulHits;
             this.time.delayedCall(500, () => {
                 this.handleLose();
             });
+        }
+    }
+
+    /**
+     * Override: Called when a round/game is won
+     */
+    onRoundWin() {
+        if (!this.isGameActive || this.gameState === 'gameWin') return;
+
+        // Increment successful hits
+        this.successfulHits++;
+        console.log(`Hit ${this.successfulHits}/3 successful!`);
+
+        // Sync roundIndex with successfulHits for proper round UI update
+        this.roundIndex = this.successfulHits - 1;
+
+        // Determine if this is the last round (3rd successful hit)
+        let isGameWin = (this.successfulHits >= this.targetRounds);
+        console.log('遊戲狀態改為:', isGameWin ? 'gameWin' : 'roundWin');
+
+        this.gameState = isGameWin ? 'gameWin' : 'roundWin';
+
+        if (this.gameTimer) this.gameTimer.stop();
+
+        if (this.gameTimer && typeof this.gameTimer.getRemaining === 'function') {
+            if (this.isContinuousTimer) {
+                if (isGameWin) {
+                    this.totalUsedSeconds = Math.max(0, this.roundPerSeconds - this.gameTimer.getRemaining());
+                }
+            } else {
+                const used = Math.max(0, this.roundPerSeconds - this.gameTimer.getRemaining());
+                this.totalUsedSeconds += used;
+            }
+        }
+
+        this.enableGameInteraction(false);
+        this.updateRoundUI(true);
+
+        // Show feedback and bubble
+        if (isGameWin) {
+
+            this.label = this.add.image(1650, 350, 'game_success_label').setDepth(555);
+            this.showBubble('win', this.playerGender);
+        } else {
+
+            this.showBubble('noBubble', this.playerGender);
+        }
+    }
+
+    /**
+     * Override: Called when win bubble is closed - moves to next bar or ends game
+     */
+    onWinBubbleClose() {
+        if (!this.isGameActive) return;
+
+        if (this.gameState === 'roundWin') {
+            // For round win, move to next bar instead of nextRound()
+            this.time.delayedCall(500, () => {
+                this.nextBar();
+            });
+
+        } else if (this.gameState === 'gameWin') {
+            // Save game result
+            if (this.sceneIndex > 0) {
+                GameManager.saveGameResult(this.sceneIndex, true, this.totalUsedSeconds);
+                console.log(`遊戲 ${this.sceneIndex} 結束，總用時: ${this.totalUsedSeconds} 秒`);
+            }
+            this.showWin();
+            this.isGameActive = false;
+            this.gameState = 'completed';
         }
     }
 
@@ -148,6 +201,22 @@ export class GameScene_4 extends BaseGameScene {
         this.bar.setTexture(barKeys[this.successfulHits]);
 
         console.log(`Moving to bar ${this.successfulHits + 1}`);
+
+        // Clear feedback label
+        if (this.feedbackLabel) {
+            this.feedbackLabel.destroy();
+            this.feedbackLabel = null;
+        }
+
+        // Re-enable interaction and continue playing
+        this.gameState = 'playing';
+        this.isGameActive = true;
+        this.enableGameInteraction(true);
+
+        // Resume timer if continuous
+        if (this.gameTimer && this.isContinuousTimer) {
+            this.gameTimer.start();
+        }
     }
 
     resetForNewRound() {
@@ -173,11 +242,23 @@ export class GameScene_4 extends BaseGameScene {
                 this.hitButton.disableInteractive();
             }
         }
+        this.allowToStart = enabled;
     }
 
     showWin() {
-        // Navigate back to main street after winning
-        GameManager.backToMainStreet(this);
+        this.showObjectPanel();
     }
+
+    showObjectPanel() {
+        const objectPanel = new CustomPanel(this, 960, 600, [{
+            content: 'game4_object_description',
+            closeBtn: 'close_btn',
+            closeBtnClick: 'close_btn_click'
+        }]);
+        objectPanel.setDepth(1000);
+        objectPanel.show();
+        objectPanel.setCloseCallBack(() => GameManager.backToMainStreet(this));
+    }
+
 
 }

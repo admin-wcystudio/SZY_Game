@@ -182,13 +182,13 @@ export default class BaseGameScene extends Phaser.Scene {
             this.currentBubbleImg.once('pointerdown', () => {
                 if (this.successVideo) this.successVideo.destroy();
                 closeBubble();
-                this.handleWinAfterBubble();
+                this.onWinBubbleClose();
             });
             if (options.autoCloseMs) {
                 this.time.delayedCall(options.autoCloseMs, () => {
                     if (!closed) {
                         closeBubble();
-                        this.handleWinAfterBubble();
+                        this.onWinBubbleClose();
                     }
                 });
             }
@@ -231,7 +231,7 @@ export default class BaseGameScene extends Phaser.Scene {
                 });
             }
         } else if (type === 'noBubble') {
-            this.handleWinAfterBubble();
+            this.onWinBubbleClose();
         }
     }
 
@@ -289,9 +289,9 @@ export default class BaseGameScene extends Phaser.Scene {
     }
 
     /**
-     * Centralized Win Logic
+     * Called when a round/game is won - processes win condition and shows win bubble
      */
-    handleWinBeforeBubble() {
+    onRoundWin() {
         if (!this.isGameActive || this.gameState === 'gameWin') return;
 
         let isFinalWin = (this.roundIndex + 1 >= this.targetRounds) || this.isAllowRoundFail;
@@ -319,7 +319,11 @@ export default class BaseGameScene extends Phaser.Scene {
             this.gameTimer.reset(this.roundPerSeconds);
         }
     }
-    handleWinAfterBubble() {
+
+    /**
+     * Called when win bubble is closed/clicked - continues to next round or ends game
+     */
+    onWinBubbleClose() {
         if (!this.isGameActive) return;
         if (this.gameState === 'roundWin') {
             this.nextRound();
@@ -408,7 +412,7 @@ export default class BaseGameScene extends Phaser.Scene {
         // 確保這是在所有東西的最上層
         const popupPanel = new CustomFailPanel(this, 960, 540, () => {
             popupPanel.destroy();
-            this.resetWholeGame(); // 重新開始整個遊戲
+            this.restartGame(); // 重新開始整個遊戲
         }, () => {
             GameManager.backToMainStreet(this);
         });
@@ -416,9 +420,9 @@ export default class BaseGameScene extends Phaser.Scene {
     }
 
     /**
-     * Reset the entire game back to initial state
+     * Restart the entire game from the beginning
      */
-    resetWholeGame() {
+    restartGame() {
         // 1. Reset state variables
         this.gameState = 'init';
         this.roundIndex = 0;
@@ -488,9 +492,6 @@ export default class BaseGameScene extends Phaser.Scene {
             this.feedbackLabel.destroy();
             this.feedbackLabel = null;
         }
-
-        // Subclass-specific reset
-        this.resetForNewRound();
 
         // Start new round
         this.startGame();
