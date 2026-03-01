@@ -81,7 +81,7 @@ export default class BaseGameScene extends Phaser.Scene {
         this.gameUI = UIHelper.createGameCommonUI(this, bgKey,
             descriptionPages, this.targetRounds, this.config.depthUI);
 
-        //this.gameUI.descriptionPanel.show();
+        this.gameUI.descriptionPanel.show();
 
         console.log('Game UI Initialized');
 

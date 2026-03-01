@@ -14,6 +14,10 @@ export class GameScene_7 extends BaseGameScene {
         const player = JSON.parse(localStorage.getItem('player') || '{"gender":"M"}');
         this.genderKey = player.gender === 'M' ? 'boy' : 'girl';
 
+        this.load.image('confirm_button', `${path}game7_confirm_button.png`);
+        this.load.image('confirm_button_select', `${path}game7_confirm_button_select.png`);
+
+
         for (let i = 1; i <= 6; i++) {
             this.load.image(`game7_answer${i}`, `${path}game7_answer${i}.png`);
             this.load.image(`game7_fill_answer${i}`, `${path}game7_fill_answer${i}.png`);
@@ -25,7 +29,7 @@ export class GameScene_7 extends BaseGameScene {
         this.load.video('game7_final_girlbg2', `${path}game7_final_girlbg2.webm`);
 
         this.load.image('game7_npc_box_intro', `${path}game7_npc_box5.png`);
-        this.load.image('game7_npc_box_feedback', `${path}game7_npc_box7.png`);
+
         this.load.image('game7_npc_box_tryagain', `${path}game7_npc_box8.png`);
 
         this.load.image('game7_npc_box_win1', `${path}game7_npc_box1.png`);
@@ -33,6 +37,7 @@ export class GameScene_7 extends BaseGameScene {
 
         this.load.image('game7_boy_feedback', `${path}game7_npc_boy_box6.png`);
         this.load.image('game7_girl_feedback', `${path}game7_npc_girl_box6.png`);
+        this.load.image('game7_npc_box_feedback', `${path}game7_npc_box7.png`);
 
         this.load.image('final_preview', `${path}game7_final_preview.png`);
         this.load.image('select_area', `${path}game7_select_area.png`);
@@ -58,13 +63,13 @@ export class GameScene_7 extends BaseGameScene {
 
 
 
-        this.confirmBtn = new CustomButton(this, this.centerX, this.height - 100,
+        this.confirmBtn = new CustomButton(this, this.centerX, this.height - 150,
             'confirm_button', 'confirm_button_select', () => {
                 this.checkAnswer();
             });
-        this.confirmBtn.setDepth(600).setVisible(false);
+        this.confirmBtn.setDepth(100).setVisible(false);
 
-        this.initGame('game7_bg', 'game7_description', true, false, {
+        this.initGame('game7_bg', 'game7_description', false, false, {
             targetRounds: 1,
             roundPerSeconds: 1000,
             isAllowRoundFail: false,
@@ -114,6 +119,7 @@ export class GameScene_7 extends BaseGameScene {
                 .setInteractive({ draggable: true });
 
             img.answerKey = key;
+            img.fillKey = key.replace('game7_answer', 'game7_fill_answer');
             img.originalX = pos.x;
             img.originalY = pos.y;
             img.currentSlot = null;
@@ -170,11 +176,11 @@ export class GameScene_7 extends BaseGameScene {
                         img.currentSlot.droppedKey = null;
                     }
 
-                    // Snap into the new slot and switch to fill texture
+                    // Snap into the new slot and switch to the dragged key's fill texture
                     img.x = closestSlot.position.x;
                     img.y = closestSlot.position.y;
                     img.setDepth(505);
-                    img.setTexture(closestSlot.fillKey);
+                    img.setTexture(img.fillKey);
                     closestSlot.droppedKey = img.answerKey;
                     img.currentSlot = closestSlot;
 
@@ -194,22 +200,120 @@ export class GameScene_7 extends BaseGameScene {
             this.answerKeyObjects.push(img);
         });
 
-        this.confirmBtn.setVisible(true);
+
+    }
+
+    enableGameInteraction(enable) {
+        this.answerKeyObjects.forEach(
+            img => img.setInteractive(enable)
+        );
+        this.confirmBtn.setVisible(enable);
     }
 
     checkAnswer() {
-        // Require all blanks to be filled first
-        const allFilled = this.fillSlots.every(slot => slot.droppedKey !== null);
-        if (!allFilled) return;
-
+        console.log('Checking answers...');
         // Each slot's droppedKey must match its targetKey
         const allCorrect = this.fillSlots.every(slot => slot.droppedKey === slot.targetKey);
 
         if (allCorrect) {
+            console.log('All correct!');
             this.onRoundWin();
         } else {
+            console.log('Incorrect, try again.');
             this.handleLose();
         }
     }
+
+    resetForNewRound() {
+        // Clear all slots
+        this.fillSlots.forEach(slot => { slot.droppedKey = null; });
+
+        // Re-shuffle spawn positions and reassign to each key
+        const shuffledPositions = Phaser.Utils.Array.Shuffle([...this.spawnPositions]);
+
+        this.answerKeyObjects.forEach((img, i) => {
+            img.currentSlot = null;
+            img.setTexture(img.answerKey);
+            img.setDepth(10);
+
+            const pos = shuffledPositions[i];
+            img.originalX = pos.x;
+            img.originalY = pos.y;
+            img.x = pos.x;
+            img.y = pos.y;
+        });
+    }
+
+    onRoundWin() {
+        if (!this.isGameActive || this.gameState === 'gameWin') return;
+
+        let isFinalWin = (this.roundIndex + 1 >= this.targetRounds) || this.isAllowRoundFail;
+        this.gameState = isFinalWin ? 'gameWin' : 'roundWin';
+
+        this.gameTimer.stop();
+        this._calculateTiming(isFinalWin);
+        this.enableGameInteraction(false);
+        this.updateRoundUI(true);
+
+        // Feedback Visuals
+        this.showFeedbackLabel(true);
+        this.showBubble('nobubble', this.playerGender);
+        //this.playFeedback(true, () =>);
+    }
+
+
+    showWin() {
+        this.video = this.add.video(this.centerX, this.centerY, `game7_final_${this.genderKey}bg1`).setDepth(100);
+        this.video.play(true);
+
+        this.dialog1 = this.add.image(this.centerX, this.centerY + 200, 'game7_npc_box_win1')
+            .setDepth(101).setInteractive({ useHandCursor: true });
+
+        this.dialog1.on('pointerdown', () => {
+            this.dialog1.destroy();
+            this.dialog2 = this.add.image(this.centerX, this.centerY + 200, 'game7_npc_box_win2')
+                .setDepth(101).setInteractive({ useHandCursor: true });
+
+            this.dialog2.on('pointerdown', () => {
+                this.dialog2.destroy();
+                this.feedback = this.add.image(this.centerX, this.centerY + 200, `game7_${this.genderKey}_feedback`)
+                    .setDepth(101).setInteractive({ useHandCursor: true });
+
+                this.feedback.on('pointerdown', () => {
+                    this.feedback.destroy();
+                    this.playVideoFeedback();
+                });
+
+            });
+        });
+
+    }
+
+    playVideoFeedback() {
+        this.video = this.add.video(this.centerX, this.centerY, `game7_final_${this.genderKey}bg2`).setDepth(100);
+        this.video.play(true);
+
+        this.time.delayedCall(500, () => {
+            this.feedback2 = this.add.image(this.centerX, this.centerY + 200, 'game7_npc_box_feedback')
+                .setDepth(101).setInteractive({ useHandCursor: true });
+
+            this.feedback2.on('pointerdown', () => {
+                this.feedback2.destroy();
+                this.showObjectPanel();
+            });
+        });
+    }
+
+    showObjectPanel() {
+        const objectPanel = new CustomPanel(this, 960, 600, [{
+            content: 'final_preview',
+            closeBtn: 'close_btn',
+            closeBtnClick: 'close_btn_click'
+        }]);
+        objectPanel.setDepth(1000);
+        objectPanel.show();
+        objectPanel.setCloseCallBack(() => GameManager.switchToGameScene(this, 'GameResultScene'));
+    }
+
 
 }
