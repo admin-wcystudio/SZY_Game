@@ -76,7 +76,7 @@ export class GameScene_3 extends BaseGameScene {
         // Now call initGame which will call setupGameObjects
         this.initGame('game3_bg', 'game3_description', false, false, {
             targetRounds: 1,
-            roundPerSeconds: 10,
+            roundPerSeconds: 60,
             isAllowRoundFail: false,
             isContinuousTimer: true,
             sceneIndex: 3
