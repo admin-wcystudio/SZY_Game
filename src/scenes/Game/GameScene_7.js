@@ -58,7 +58,13 @@ export class GameScene_7 extends BaseGameScene {
 
 
 
-        this.initGame('game7_bg', 'game7_description', false, false, {
+        this.confirmBtn = new CustomButton(this, this.centerX, this.height - 100,
+            'confirm_button', 'confirm_button_select', () => {
+                this.checkAnswer();
+            });
+        this.confirmBtn.setDepth(600).setVisible(false);
+
+        this.initGame('game7_bg', 'game7_description', true, false, {
             targetRounds: 1,
             roundPerSeconds: 1000,
             isAllowRoundFail: false,
@@ -66,11 +72,6 @@ export class GameScene_7 extends BaseGameScene {
             sceneIndex: 7
         });
 
-        this.confirmBtn = new CustomButton(this, this.centerX, this.height - 100,
-            'confirm_button', 'confirm_button_select', () => {
-                this.checkAnswer();
-            });
-        this.confirmBtn.setDepth(600).setVisible(false);
     }
 
     setupGameObjects() {
@@ -85,16 +86,17 @@ export class GameScene_7 extends BaseGameScene {
             { key: 'game7_answer3', fillKey: 'game7_fill_answer3', position: { x: this.centerX + 500, y: this.centerY + 175 } },
         ];
 
-        // --- 1. Create fill slots (the blank target areas) ---
+        // --- 1. Create fill slots – select_area indicator only, hidden by default, no hint texture ---
         this.fillSlots = this.targetContents.map(tc => {
-            const slotImg = this.add.image(tc.position.x, tc.position.y, tc.fillKey)
-                .setDepth(2)
-                .setAlpha(0.35);
+            const selectArea = this.add.image(tc.position.x, tc.position.y, 'select_area')
+                .setDepth(500)
+                .setVisible(false);
             return {
-                image: slotImg,
-                targetKey: tc.key,        // correct answer for this slot
+                selectArea,
+                fillKey: tc.fillKey,
+                targetKey: tc.key,
                 position: tc.position,
-                droppedKey: null,          // which answer is currently in this slot
+                droppedKey: null,
             };
         });
 
@@ -103,6 +105,7 @@ export class GameScene_7 extends BaseGameScene {
         const shuffledPositions = Phaser.Utils.Array.Shuffle([...this.spawnPositions]);
 
         this.answerKeyObjects = [];
+        const SNAP_RADIUS = 120;
 
         answerKeys.forEach((key, i) => {
             const pos = shuffledPositions[i];
@@ -115,60 +118,76 @@ export class GameScene_7 extends BaseGameScene {
             img.originalY = pos.y;
             img.currentSlot = null;
 
-            // drag – move with pointer
+            // drag – move with pointer; highlight nearest slot within range
             img.on('drag', (pointer, dragX, dragY) => {
                 img.x = dragX;
                 img.y = dragY;
                 img.setDepth(20);
+
+                // Show select_area only for the closest empty-or-current slot within range
+                let closestSlot = null;
+                let closestDist = SNAP_RADIUS;
+                this.fillSlots.forEach(slot => {
+                    // Don't highlight a slot already occupied by another key
+                    if (slot.droppedKey && slot.droppedKey !== img.answerKey) return;
+                    const dist = Phaser.Math.Distance.Between(dragX, dragY, slot.position.x, slot.position.y);
+                    if (dist < closestDist) { closestDist = dist; closestSlot = slot; }
+                });
+
+                this.fillSlots.forEach(slot => {
+                    slot.selectArea.setVisible(slot === closestSlot);
+                });
             });
 
             // dragend – snap to nearest slot or return to origin
             img.on('dragend', () => {
-                img.setDepth(10);
+                // Hide all select_area indicators
+                this.fillSlots.forEach(slot => slot.selectArea.setVisible(false));
 
-                const SNAP_RADIUS = 80;
                 let closestSlot = null;
                 let closestDist = SNAP_RADIUS;
-
                 this.fillSlots.forEach(slot => {
+                    if (slot.droppedKey && slot.droppedKey !== img.answerKey) return;
                     const dist = Phaser.Math.Distance.Between(img.x, img.y, slot.position.x, slot.position.y);
-                    if (dist < closestDist) {
-                        closestDist = dist;
-                        closestSlot = slot;
-                    }
+                    if (dist < closestDist) { closestDist = dist; closestSlot = slot; }
                 });
 
                 if (closestSlot) {
-                    // Evict any key already in that slot back to its origin
-                    if (closestSlot.droppedKey) {
+                    // Evict any key already in that slot – revert its texture and send it home
+                    if (closestSlot.droppedKey && closestSlot.droppedKey !== img.answerKey) {
                         const prev = this.answerKeyObjects.find(a => a.answerKey === closestSlot.droppedKey);
                         if (prev) {
+                            prev.setTexture(prev.answerKey);
                             prev.x = prev.originalX;
                             prev.y = prev.originalY;
+                            prev.setDepth(10);
                             prev.currentSlot = null;
                         }
                     }
 
-                    // Free the slot this key was previously in
+                    // Revert the slot this key was previously in
                     if (img.currentSlot) {
                         img.currentSlot.droppedKey = null;
                     }
 
-                    // Snap into the new slot
+                    // Snap into the new slot and switch to fill texture
                     img.x = closestSlot.position.x;
                     img.y = closestSlot.position.y;
-                    img.setDepth(5);
+                    img.setDepth(505);
+                    img.setTexture(closestSlot.fillKey);
                     closestSlot.droppedKey = img.answerKey;
                     img.currentSlot = closestSlot;
 
                 } else {
-                    // Not near any slot – return to spawn origin
+                    // Return to spawn origin and restore original texture
                     if (img.currentSlot) {
                         img.currentSlot.droppedKey = null;
                         img.currentSlot = null;
                     }
+                    img.setTexture(img.answerKey);
                     img.x = img.originalX;
                     img.y = img.originalY;
+                    img.setDepth(10);
                 }
             });
 
