@@ -83,12 +83,30 @@ export class GameScene_7 extends BaseGameScene {
         this.content = this.add.image(this.centerX, this.centerY, 'game7_border').setDepth(1);
 
         this.targetContents = [
-            { key: 'game7_answer1', fillKey: 'game7_fill_answer1', position: { x: this.centerX - 75, y: this.centerY - 250 } },
-            { key: 'game7_answer5', fillKey: 'game7_fill_answer5', position: { x: this.centerX - 100, y: this.centerY - 100 } },
-            { key: 'game7_answer4', fillKey: 'game7_fill_answer4', position: { x: this.centerX + 60, y: this.centerY + 80 } },
-            { key: 'game7_answer6', fillKey: 'game7_fill_answer6', position: { x: this.centerX + 410, y: this.centerY - 100 } },
-            { key: 'game7_answer2', fillKey: 'game7_fill_answer2', position: { x: this.centerX + 200, y: this.centerY + 175 } },
-            { key: 'game7_answer3', fillKey: 'game7_fill_answer3', position: { x: this.centerX + 500, y: this.centerY + 175 } },
+            {
+                key: 'game7_answer1', fillKey: 'game7_fill_answer1'
+                , position: { x: this.centerX - 75, y: this.centerY - 250 }
+            },
+            {
+                key: 'game7_answer5', fillKey: 'game7_fill_answer5',
+                position: { x: this.centerX - 100, y: this.centerY - 100 }
+            },
+            {
+                key: 'game7_answer4', fillKey: 'game7_fill_answer4', position:
+                    { x: this.centerX + 60, y: this.centerY + 80 }
+            },
+            {
+                key: 'game7_answer6', fillKey: 'game7_fill_answer6', position:
+                    { x: this.centerX + 410, y: this.centerY - 100 }
+            },
+            {
+                key: 'game7_answer3', fillKey: 'game7_fill_answer3', position:
+                    { x: this.centerX + 200, y: this.centerY + 175 }
+            },
+            {
+                key: 'game7_answer2', fillKey: 'game7_fill_answer2', position:
+                    { x: this.centerX + 500, y: this.centerY + 175 }
+            },
         ];
 
         // --- 1. Create fill slots – select_area indicator only, hidden by default, no hint texture ---
@@ -101,7 +119,7 @@ export class GameScene_7 extends BaseGameScene {
                 fillKey: tc.fillKey,
                 targetKey: tc.key,
                 position: tc.position,
-                droppedKey: null,
+                occupiedBy: null,
             };
         });
 
@@ -135,7 +153,7 @@ export class GameScene_7 extends BaseGameScene {
                 let closestDist = SNAP_RADIUS;
                 this.fillSlots.forEach(slot => {
                     // Don't highlight a slot already occupied by another key
-                    if (slot.droppedKey && slot.droppedKey !== img.answerKey) return;
+                    if (slot.occupiedBy && slot.occupiedBy !== img.answerKey) return;
                     const dist = Phaser.Math.Distance.Between(dragX, dragY, slot.position.x, slot.position.y);
                     if (dist < closestDist) { closestDist = dist; closestSlot = slot; }
                 });
@@ -153,17 +171,18 @@ export class GameScene_7 extends BaseGameScene {
                 let closestSlot = null;
                 let closestDist = SNAP_RADIUS;
                 this.fillSlots.forEach(slot => {
-                    if (slot.droppedKey && slot.droppedKey !== img.answerKey) return;
+                    if (slot.occupiedBy && slot.occupiedBy !== img.answerKey) return;
                     const dist = Phaser.Math.Distance.Between(img.x, img.y, slot.position.x, slot.position.y);
                     if (dist < closestDist) { closestDist = dist; closestSlot = slot; }
                 });
 
                 if (closestSlot) {
                     // Evict any key already in that slot – revert its texture and send it home
-                    if (closestSlot.droppedKey && closestSlot.droppedKey !== img.answerKey) {
-                        const prev = this.answerKeyObjects.find(a => a.answerKey === closestSlot.droppedKey);
+                    if (closestSlot.occupiedBy && closestSlot.occupiedBy !== img.answerKey) {
+                        const prev = this.answerKeyObjects.find(a => a.answerKey === closestSlot.occupiedBy);
                         if (prev) {
                             prev.setTexture(prev.answerKey);
+                            prev.clearTint();
                             prev.x = prev.originalX;
                             prev.y = prev.originalY;
                             prev.setDepth(10);
@@ -173,7 +192,7 @@ export class GameScene_7 extends BaseGameScene {
 
                     // Revert the slot this key was previously in
                     if (img.currentSlot) {
-                        img.currentSlot.droppedKey = null;
+                        img.currentSlot.occupiedBy = null;
                     }
 
                     // Snap into the new slot and switch to the dragged key's fill texture
@@ -181,21 +200,27 @@ export class GameScene_7 extends BaseGameScene {
                     img.y = closestSlot.position.y;
                     img.setDepth(505);
                     img.setTexture(img.fillKey);
-                    closestSlot.droppedKey = img.answerKey;
+                    closestSlot.occupiedBy = img.answerKey;
                     img.currentSlot = closestSlot;
 
                 } else {
                     // Return to spawn origin and restore original texture
                     if (img.currentSlot) {
-                        img.currentSlot.droppedKey = null;
+                        img.currentSlot.occupiedBy = null;
                         img.currentSlot = null;
                     }
                     img.setTexture(img.answerKey);
+                    // img.clearTint();
                     img.x = img.originalX;
                     img.y = img.originalY;
                     img.setDepth(10);
                 }
+
+                // After every drop, refresh tint feedback on all filled slots
+                //  this._updateSlotTints();
             });
+
+            console.log(`Created answer key: ${key} at (${pos.x}, ${pos.y})`);
 
             this.answerKeyObjects.push(img);
         });
@@ -203,17 +228,30 @@ export class GameScene_7 extends BaseGameScene {
 
     }
 
+    // Tint each snapped key: green = correct slot, red = wrong slot
+    _updateSlotTints() {
+        this.fillSlots.forEach(slot => {
+            if (!slot.occupiedBy) return;
+            const img = this.answerKeyObjects.find(a => a.answerKey === slot.occupiedBy);
+            if (!img) return;
+            const isCorrect = slot.occupiedBy === slot.targetKey;
+            img.setTint(isCorrect ? 0x00ff00 : 0xff4444);
+        });
+    }
+
     enableGameInteraction(enable) {
         this.answerKeyObjects.forEach(
             img => img.setInteractive(enable)
         );
+        this.fillSlots.forEach(slot => slot.selectArea.setVisible(false));
         this.confirmBtn.setVisible(enable);
     }
 
     checkAnswer() {
         console.log('Checking answers...');
-        // Each slot's droppedKey must match its targetKey
-        const allCorrect = this.fillSlots.every(slot => slot.droppedKey === slot.targetKey);
+        // Each slot's occupiedBy must match its targetKey
+        const allCorrect = this.fillSlots.every(slot => slot.occupiedBy === slot.targetKey);
+
 
         if (allCorrect) {
             console.log('All correct!');
@@ -226,7 +264,7 @@ export class GameScene_7 extends BaseGameScene {
 
     resetForNewRound() {
         // Clear all slots
-        this.fillSlots.forEach(slot => { slot.droppedKey = null; });
+        this.fillSlots.forEach(slot => { slot.occupiedBy = null; });
 
         // Re-shuffle spawn positions and reassign to each key
         const shuffledPositions = Phaser.Utils.Array.Shuffle([...this.spawnPositions]);
@@ -234,6 +272,7 @@ export class GameScene_7 extends BaseGameScene {
         this.answerKeyObjects.forEach((img, i) => {
             img.currentSlot = null;
             img.setTexture(img.answerKey);
+            img.clearTint();
             img.setDepth(10);
 
             const pos = shuffledPositions[i];
@@ -257,12 +296,18 @@ export class GameScene_7 extends BaseGameScene {
 
         // Feedback Visuals
         this.showFeedbackLabel(true);
-        this.showBubble('nobubble', this.playerGender);
+        this.showBubble('noBubble', this.playerGender);
         //this.playFeedback(true, () =>);
     }
 
 
     showWin() {
+        // Hide all game objects
+        this.content?.setVisible(false);
+        this.answerKeyObjects?.forEach(img => img.setVisible(false));
+        this.fillSlots?.forEach(slot => slot.selectArea.setVisible(false));
+        this.confirmBtn?.setVisible(false);
+
         this.video = this.add.video(this.centerX, this.centerY, `game7_final_${this.genderKey}bg1`).setDepth(100);
         this.video.play(true);
 
