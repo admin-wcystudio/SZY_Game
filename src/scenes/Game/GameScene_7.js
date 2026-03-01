@@ -47,14 +47,16 @@ export class GameScene_7 extends BaseGameScene {
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
 
-        this.spawnCardPositions = [
-            { x: centerX - 500, y: centerY - 150 },
-            { x: centerX - 250, y: centerY - 150 },
-            { x: centerX, y: centerY - 150 },
-            { x: centerX + 250, y: centerY - 150 },
-            { x: centerX + 500, y: centerY - 150 },
-            { x: centerX - 500, y: centerY + 150 },
+        this.spawnPositions = [
+            { x: this.centerX - 800, y: this.centerY - 150 },
+            { x: this.centerX - 800, y: this.centerY + 350 },
+            { x: this.centerX - 800, y: this.centerY + 100 },
+            { x: this.centerX + 800, y: this.centerY - 150 },
+            { x: this.centerX + 800, y: this.centerY + 100 },
+            { x: this.centerX + 800, y: this.centerY + 350 },
         ];
+
+
 
         this.initGame('game7_bg', 'game7_description', false, false, {
             targetRounds: 1,
@@ -63,47 +65,132 @@ export class GameScene_7 extends BaseGameScene {
             isContinuousTimer: true,
             sceneIndex: 7
         });
+
+        this.confirmBtn = new CustomButton(this, this.centerX, this.height - 100,
+            'confirm_button', 'confirm_button_select', () => {
+                this.checkAnswer();
+            });
+        this.confirmBtn.setDepth(600).setVisible(false);
     }
 
     setupGameObjects() {
         this.content = this.add.image(this.centerX, this.centerY, 'game7_border').setDepth(1);
+
         this.targetContents = [
-            {
-                key: 'game7_answer1',
-                fillKey: 'game7_fill_answer1',
-                position: { x: this.centerX, y: this.centerY - 100 }
-            },
-            {
-                key: 'game7_answer2',
-                fillKey: 'game7_fill_answer2',
-                position: { x: this.centerX, y: this.centerY }
-            },
-            {
-                key: 'game7_answer3',
-                fillKey: 'game7_fill_answer3',
-                position: { x: this.centerX, y: this.centerY + 100 }
-            },
-            {
-                key: 'game7_answer4',
-                fillKey: 'game7_fill_answer4',
-                position: { x: this.centerX + 200, y: this.centerY - 50 }
-            },
+            { key: 'game7_answer1', fillKey: 'game7_fill_answer1', position: { x: this.centerX - 75, y: this.centerY - 250 } },
+            { key: 'game7_answer5', fillKey: 'game7_fill_answer5', position: { x: this.centerX - 100, y: this.centerY - 100 } },
+            { key: 'game7_answer4', fillKey: 'game7_fill_answer4', position: { x: this.centerX + 60, y: this.centerY + 80 } },
+            { key: 'game7_answer6', fillKey: 'game7_fill_answer6', position: { x: this.centerX + 410, y: this.centerY - 100 } },
+            { key: 'game7_answer2', fillKey: 'game7_fill_answer2', position: { x: this.centerX + 200, y: this.centerY + 175 } },
+            { key: 'game7_answer3', fillKey: 'game7_fill_answer3', position: { x: this.centerX + 500, y: this.centerY + 175 } },
+        ];
 
-            {
-                key: 'game7_answer5',
-                fillKey: 'game7_fill_answer5',
-                position: { x: this.centerX + 200, y: this.centerY + 50 }
-            },
-            {
-                key: 'game7_answer6',
-                fillKey: 'game7_fill_answer6',
-                position: { x: this.centerX + 200, y: this.centerY + 150 }
-            }
+        // --- 1. Create fill slots (the blank target areas) ---
+        this.fillSlots = this.targetContents.map(tc => {
+            const slotImg = this.add.image(tc.position.x, tc.position.y, tc.fillKey)
+                .setDepth(2)
+                .setAlpha(0.35);
+            return {
+                image: slotImg,
+                targetKey: tc.key,        // correct answer for this slot
+                position: tc.position,
+                droppedKey: null,          // which answer is currently in this slot
+            };
+        });
 
-        ]
-
+        // --- 2. Randomize spawn positions and create draggable answer keys ---
         const answerKeys = ['game7_answer1', 'game7_answer2', 'game7_answer3', 'game7_answer4', 'game7_answer5', 'game7_answer6'];
-        const fillAnswerKeys = ['game7_fill_answer1', 'game7_fill_answer2', 'game7_fill_answer3', 'game7_fill_answer4', 'game7_fill_answer5', 'game7_fill_answer6'];
+        const shuffledPositions = Phaser.Utils.Array.Shuffle([...this.spawnPositions]);
+
+        this.answerKeyObjects = [];
+
+        answerKeys.forEach((key, i) => {
+            const pos = shuffledPositions[i];
+            const img = this.add.image(pos.x, pos.y, key)
+                .setDepth(10)
+                .setInteractive({ draggable: true });
+
+            img.answerKey = key;
+            img.originalX = pos.x;
+            img.originalY = pos.y;
+            img.currentSlot = null;
+
+            // drag – move with pointer
+            img.on('drag', (pointer, dragX, dragY) => {
+                img.x = dragX;
+                img.y = dragY;
+                img.setDepth(20);
+            });
+
+            // dragend – snap to nearest slot or return to origin
+            img.on('dragend', () => {
+                img.setDepth(10);
+
+                const SNAP_RADIUS = 80;
+                let closestSlot = null;
+                let closestDist = SNAP_RADIUS;
+
+                this.fillSlots.forEach(slot => {
+                    const dist = Phaser.Math.Distance.Between(img.x, img.y, slot.position.x, slot.position.y);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestSlot = slot;
+                    }
+                });
+
+                if (closestSlot) {
+                    // Evict any key already in that slot back to its origin
+                    if (closestSlot.droppedKey) {
+                        const prev = this.answerKeyObjects.find(a => a.answerKey === closestSlot.droppedKey);
+                        if (prev) {
+                            prev.x = prev.originalX;
+                            prev.y = prev.originalY;
+                            prev.currentSlot = null;
+                        }
+                    }
+
+                    // Free the slot this key was previously in
+                    if (img.currentSlot) {
+                        img.currentSlot.droppedKey = null;
+                    }
+
+                    // Snap into the new slot
+                    img.x = closestSlot.position.x;
+                    img.y = closestSlot.position.y;
+                    img.setDepth(5);
+                    closestSlot.droppedKey = img.answerKey;
+                    img.currentSlot = closestSlot;
+
+                } else {
+                    // Not near any slot – return to spawn origin
+                    if (img.currentSlot) {
+                        img.currentSlot.droppedKey = null;
+                        img.currentSlot = null;
+                    }
+                    img.x = img.originalX;
+                    img.y = img.originalY;
+                }
+            });
+
+            this.answerKeyObjects.push(img);
+        });
+
+        this.confirmBtn.setVisible(true);
+    }
+
+    checkAnswer() {
+        // Require all blanks to be filled first
+        const allFilled = this.fillSlots.every(slot => slot.droppedKey !== null);
+        if (!allFilled) return;
+
+        // Each slot's droppedKey must match its targetKey
+        const allCorrect = this.fillSlots.every(slot => slot.droppedKey === slot.targetKey);
+
+        if (allCorrect) {
+            this.onRoundWin();
+        } else {
+            this.handleLose();
+        }
     }
 
 }
