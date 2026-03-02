@@ -311,17 +311,18 @@ export class GameScene_7 extends BaseGameScene {
         this.video = this.add.video(this.centerX, this.centerY, `game7_final_${this.genderKey}bg1`).setDepth(100);
         this.video.play(true);
 
-        this.dialog1 = this.add.image(this.centerX, this.centerY + 200, 'game7_npc_box_win1')
+        this.dialog1 = this.add.image(this.centerX, this.centerY, 'game7_npc_box_win1')
+            .setDepth(101).setInteractive({ useHandCursor: true });
+
+        this.dialog2 = this.add.image(this.centerX, this.centerY + 300, 'game7_npc_box_win2')
             .setDepth(101).setInteractive({ useHandCursor: true });
 
         this.dialog1.on('pointerdown', () => {
             this.dialog1.destroy();
-            this.dialog2 = this.add.image(this.centerX, this.centerY + 200, 'game7_npc_box_win2')
-                .setDepth(101).setInteractive({ useHandCursor: true });
 
             this.dialog2.on('pointerdown', () => {
                 this.dialog2.destroy();
-                this.feedback = this.add.image(this.centerX, this.centerY + 200, `game7_${this.genderKey}_feedback`)
+                this.feedback = this.add.image(this.centerX, this.centerY + 300, `game7_${this.genderKey}_feedback`)
                     .setDepth(101).setInteractive({ useHandCursor: true });
 
                 this.feedback.on('pointerdown', () => {
