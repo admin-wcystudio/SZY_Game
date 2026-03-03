@@ -19,7 +19,7 @@ export class GameScene_2 extends BaseGameScene {
         this.load.image('game2_npc_box_win', `${path}game2_npc_box4.png`);
         this.load.image('game2_npc_box_tryagain', `${path}game2_npc_box5.png`);
         this.load.image('game2_bg', `${path}game2_mazeobject1.png`);
-        this.load.image('coin,', `${path}game2_mazeobject2.png`);
+        this.load.image('coin', `${path}game2_mazeobject2.png`);
 
         this.load.image('up_btn', `${path}game2_up_button.png`);
         this.load.image('up_btn_click', `${path}game2_up_button_click.png`);
@@ -82,6 +82,46 @@ export class GameScene_2 extends BaseGameScene {
     create() {
         this.createAnimations();
 
+        // --- Maze Grid Configuration ---
+        // Adjust originX, originY, cellSize to align with your maze background image
+        this.MAZE = {
+            originX: 85,     // Left edge of maze area (px)
+            originY: 125,     // Top edge of maze area (px)
+            cellWidth: 82,   // Width of each cell (px)
+            cellHeight: 82,  // Height of each cell (px)
+            cols: 22,
+            rows: 10,
+        };
+
+        // Maze grid: 0 = walkable path, 1 = wall (22 cols x 10 rows)
+        this.mazeGrid = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Row 0
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Row 1
+            [1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1],  // Row 2
+            [1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],  // Row 3
+            [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1],  // Row 4
+            [0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  // Row 5
+            [0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1],  // Row 6
+            [0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1],  // Row 7
+            [1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  // Row 8
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Row 9
+        ];
+
+        // Player grid position (start just inside the bottom opening)
+        this.playerGridRow = 8;
+        this.playerGridCol = 10;
+
+        // Goal position (NPC at top, just inside top opening)
+        this.goalGridRow = 1;
+        this.goalGridCol = 10;
+
+        // Movement lock to prevent overlapping moves
+        this.isMoving = false;
+
+        // Coin tracking
+        this.coins = [];
+        this.collectedCoins = 0;
+
         this.initGame('game2_bg', 'game2_description', false, false, {
             targetRounds: 1,
             roundPerSeconds: 6000,
@@ -90,186 +130,222 @@ export class GameScene_2 extends BaseGameScene {
             sceneIndex: 2
         });
 
-        // Define walkable areas (1 = walkable stone path, 0 = blocked grass)
-        // Grid coordinates based on the maze layout, tile size is 100px
-        // ADJUST THESE VALUES to align grid with your background maze image:
-        this.tileSize = 100;      // Size of each grid cell in pixels
-        this.gridOffsetX = 60;    // X position where maze starts (adjust this)
-        this.gridOffsetY = 0;     // Y position where maze starts (adjust this)
-
-        // Map of the maze - adjust based on actual maze layout
-        // This is a simplified grid representing walkable (1) vs blocked (0) areas
-        this.mazeGrid = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 0
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 1
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 2
-            [0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0], // row 3
-            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0], // row 4
-            [0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0], // row 5
-            [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0], // row 6
-            [0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0], // row 7
-            [0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0], // row 8
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], // row 9
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], // row 10
-        ];
-        this.drawDebugGrid();
-
+        // Direction buttons
         this.leftBtn = new CustomButton(this, 1550, 900, 'left_btn', 'left_btn_click', () => {
             this.moveDirection('left');
-            this.resetPlayerState();
-        }, () => {
-        }).setDepth(2);
+        }, () => { }).setDepth(2);
 
-        this.rightBtn = new CustomButton(this, 1750, 900, 'right_btn', 'right_btn_click',
-            () => {
-                this.moveDirection('right');
-                this.resetPlayerState();
-            }, () => {
-
-            }).setDepth(2);
-
+        this.rightBtn = new CustomButton(this, 1750, 900, 'right_btn', 'right_btn_click', () => {
+            this.moveDirection('right');
+        }, () => { }).setDepth(2);
 
         this.upBtn = new CustomButton(this, 1650, 800, 'up_btn', 'up_btn_click', () => {
             this.moveDirection('up');
-            this.resetPlayerState();
-        }, () => {
-        }).setDepth(2);
+        }, () => { }).setDepth(2);
 
         this.downBtn = new CustomButton(this, 1650, 1000, 'down_btn', 'down_btn_click', () => {
             this.moveDirection('down');
-            this.resetPlayerState();
-        }, () => {
-        }).setDepth(2);
+        }, () => { }).setDepth(2);
 
-        // Initially disable buttons until game starts
-        // this.leftBtn.setVisible(false);
-        // this.rightBtn.setVisible(false);
-        // this.upBtn.setVisible(false);
-        // this.downBtn.setVisible(false);
-
-        // this.leftBtn.disableInteractive();
-        // this.rightBtn.disableInteractive();
-        // this.upBtn.disableInteractive();
-        // this.downBtn.disableInteractive();
-
+        // Character setup
         this.genderKey = this.gender === 'M' ? 'boy' : 'girl';
         console.log('genderKey:', this.genderKey);
 
-        // Use frontstop for boy, frontwalking for girl (since girl_frontstop doesn't exist)
+        // Use frontstop for boy, frontwalking for girl (girl_frontstop doesn't exist)
         const idleKey = this.gender === 'M' ? 'frontstop' : 'frontwalking';
-        this.player = this.add.sprite(this.centerX, 1000, `${this.genderKey}_${idleKey}`)
-            .setOrigin(0.5, 1).setDepth(2).setScale(2);
-        this.player.anims.play(`${this.genderKey}_${idleKey}_anim`, true);
-
-        // Store idle animation key for resets
         this.idleAnimKey = `${this.genderKey}_${idleKey}_anim`;
+        this.lastDirection = 'down';
 
+        // Create player at starting grid position
+        const startPos = this.gridToPixel(this.playerGridRow, this.playerGridCol);
+        this.player = this.add.sprite(this.centerX + 60, 1000, `${this.genderKey}_${idleKey}`)
+            .setOrigin(0.5, 0.5).setDepth(2).setScale(2);
+
+        // Place coins on the maze (optional collectibles)
+        this.placeCoins();
+
+        // Draw debug grid overlay
+        this.drawDebugGrid();
     }
 
-    moveDirection(direction) {
-        const speed = 100;
-        let animKey;
-        let newX = this.player.x;
-        let newY = this.player.y;
+    // --- Debug Grid ---
 
-        switch (direction) {
-            case 'left':
-                animKey = 'leftwalking';
-                newX -= speed;
-                break;
-            case 'right':
-                animKey = 'rightwalking';
-                newX += speed;
-                break;
-            case 'up':
-                animKey = 'backwalking';
-                newY -= speed;
-                break;
-            case 'down':
-                animKey = 'frontwalking';
-                newY += speed;
-                break;
-        }
-
-        // Check if the new position is walkable
-        const { gridX, gridY } = this.pixelToGrid(newX, newY);
-        console.log(`Trying to move ${direction} to pixel (${newX}, ${newY}) = grid (${gridX}, ${gridY})`);
-
-        if (this.isWalkable(newX, newY)) {
-            this.player.x = newX;
-            this.player.y = newY;
-            this.player.anims.play(`${this.genderKey}_${animKey}_anim`, true);
-            console.log('Movement allowed');
-        } else {
-            console.log(`Cannot move to blocked area. Grid value: ${this.mazeGrid[gridY]?.[gridX] ?? 'out of bounds'}`);
-        }
-    }
-
-    // Convert pixel coordinates to grid coordinates
-    pixelToGrid(x, y) {
-        const gridX = Math.floor((x - this.gridOffsetX) / this.tileSize);
-        const gridY = Math.floor((y - this.gridOffsetY) / this.tileSize);
-        return { gridX, gridY };
-    }
-
-    // Check if a pixel position is on a walkable tile
-    isWalkable(x, y) {
-        const { gridX, gridY } = this.pixelToGrid(x, y);
-
-        // Check if coordinates are within grid bounds
-        if (gridY < 0 || gridY >= this.mazeGrid.length ||
-            gridX < 0 || gridX >= this.mazeGrid[0].length) {
-            return false;
-        }
-
-        // Return true if tile is walkable (1), false if blocked (0)
-        return this.mazeGrid[gridY][gridX] === 1;
-    }
-
-    // Draw debug grid overlay to visualize walkable areas
+    /** Draw a colored overlay on each cell: green = walkable, red = wall */
     drawDebugGrid() {
         const graphics = this.add.graphics();
-        graphics.setDepth(10); // Above background, below player
+        graphics.setDepth(1); // above BG, below player/coins
 
-        for (let row = 0; row < this.mazeGrid.length; row++) {
-            for (let col = 0; col < this.mazeGrid[row].length; col++) {
-                const x = col * this.tileSize + this.gridOffsetX;
-                const y = row * this.tileSize + this.gridOffsetY;
+        for (let row = 0; row < this.MAZE.rows; row++) {
+            for (let col = 0; col < this.MAZE.cols; col++) {
+                const x = this.MAZE.originX + col * this.MAZE.cellWidth;
+                const y = this.MAZE.originY + row * this.MAZE.cellHeight;
+                const isWall = this.mazeGrid[row][col] === 1;
 
-                // Draw walkable tiles in green with transparency
-                if (this.mazeGrid[row][col] === 1) {
-                    graphics.fillStyle(0x00ff00, 0.3); // Green, 30% opacity
-                } else {
-                    graphics.fillStyle(0xff0000, 0.2); // Red, 20% opacity
-                }
+                // Fill: green (walkable) or red (wall), semi-transparent
+                graphics.fillStyle(isWall ? 0xff0000 : 0x00ff00, 0.25);
+                graphics.fillRect(x, y, this.MAZE.cellWidth, this.MAZE.cellHeight);
 
-                graphics.fillRect(x, y, this.tileSize, this.tileSize);
-
-                // Draw grid lines and coordinates
-                graphics.lineStyle(1, 0xffffff, 0.5);
-                graphics.strokeRect(x, y, this.tileSize, this.tileSize);
-
-                // Add text showing grid coordinates
-                const text = this.add.text(x + 5, y + 5, `${col},${row}`, {
-                    fontSize: '12px',
-                    fill: '#ffffff'
-                }).setDepth(11);
+                // Border
+                graphics.lineStyle(1, 0xffffff, 0.4);
+                graphics.strokeRect(x, y, this.MAZE.cellWidth, this.MAZE.cellHeight);
             }
         }
 
-        // Store graphics object so we can toggle it later if needed
-        this.debugGraphics = graphics;
-
-        // Log player's initial position
-        const { gridX, gridY } = this.pixelToGrid(this.centerX, 1000);
-        console.log(`Player starts at pixel (${this.centerX}, 1000) = grid (${gridX}, ${gridY})`);
-        console.log(`Grid offset: (${this.gridOffsetX}, ${this.gridOffsetY}), Tile size: ${this.tileSize}`);
+        // Label each cell with row,col
+        for (let row = 0; row < this.MAZE.rows; row++) {
+            for (let col = 0; col < this.MAZE.cols; col++) {
+                const cx = this.MAZE.originX + col * this.MAZE.cellWidth + this.MAZE.cellWidth / 2;
+                const cy = this.MAZE.originY + row * this.MAZE.cellHeight + this.MAZE.cellHeight / 2;
+                this.add.text(cx, cy, `${row},${col}`, {
+                    fontSize: '10px', color: '#ffffff', fontStyle: 'bold'
+                }).setOrigin(0.5).setDepth(1);
+            }
+        }
     }
 
-    resetPlayerState() {
-        this.time.delayedCall(300, () => {
-            this.player.anims.play(this.idleAnimKey, true);
+    // --- Grid / Pixel Conversion Helpers ---
+
+    /** Convert grid (row, col) to pixel center of that cell */
+    gridToPixel(row, col) {
+        return {
+            x: this.MAZE.originX + col * this.MAZE.cellWidth + this.MAZE.cellWidth / 2,
+            y: this.MAZE.originY + row * this.MAZE.cellHeight + this.MAZE.cellHeight / 2
+        };
+    }
+
+    /** Convert pixel (x, y) to grid (row, col) */
+    pixelToGrid(x, y) {
+        return {
+            col: Math.floor((x - this.MAZE.originX) / this.MAZE.cellWidth),
+            row: Math.floor((y - this.MAZE.originY) / this.MAZE.cellHeight)
+        };
+    }
+
+    /** Check whether a grid cell is walkable (0 = path) */
+    isWalkable(row, col) {
+        if (row < 0 || row >= this.MAZE.rows || col < 0 || col >= this.MAZE.cols) {
+            return false;
+        }
+        return this.mazeGrid[row][col] === 0;
+    }
+
+    // --- Movement ---
+
+    moveDirection(direction) {
+        if (this.isMoving || !this.isGameActive) return;
+
+        let targetRow = this.playerGridRow;
+        let targetCol = this.playerGridCol;
+        let walkAnimKey, stopAnimKey;
+
+        switch (direction) {
+            case 'left':
+                targetCol -= 1;
+                walkAnimKey = `${this.genderKey}_leftwalking_anim`;
+                stopAnimKey = `${this.genderKey}_leftstop_anim`;
+                break;
+            case 'right':
+                targetCol += 1;
+                walkAnimKey = `${this.genderKey}_rightwalking_anim`;
+                stopAnimKey = `${this.genderKey}_rightstop_anim`;
+                break;
+            case 'up':
+                targetRow -= 1;
+                walkAnimKey = `${this.genderKey}_backwalking_anim`;
+                stopAnimKey = `${this.genderKey}_backstop_anim`;
+                break;
+            case 'down':
+                targetRow += 1;
+                walkAnimKey = `${this.genderKey}_frontwalking_anim`;
+                // girl has no frontstop, fall back to frontwalking
+                stopAnimKey = this.gender === 'M'
+                    ? `${this.genderKey}_frontstop_anim`
+                    : `${this.genderKey}_frontwalking_anim`;
+                break;
+        }
+
+        this.lastDirection = direction;
+
+        // --- Wall collision check ---
+        if (!this.isWalkable(targetRow, targetCol)) {
+            // Blocked: briefly show walk anim, then revert to stop
+            this.player.anims.play(walkAnimKey, true);
+            this.time.delayedCall(200, () => {
+                this.player.anims.play(stopAnimKey, true);
+            });
+            return;
+        }
+
+        // --- Move player to the target cell ---
+        this.isMoving = true;
+        const targetPos = this.gridToPixel(targetRow, targetCol);
+
+        this.player.anims.play(walkAnimKey, true);
+
+        this.tweens.add({
+            targets: this.player,
+            x: targetPos.x,
+            y: targetPos.y,
+            duration: 250,
+            ease: 'Linear',
+            onComplete: () => {
+                this.playerGridRow = targetRow;
+                this.playerGridCol = targetCol;
+                this.isMoving = false;
+
+                // Switch to idle / stop animation
+                this.player.anims.play(stopAnimKey, true);
+
+                // Pick up any coin on this cell
+                this.tryCollectCoin(targetRow, targetCol);
+
+                // Check if player reached the goal (NPC)
+                this.checkGoal();
+            }
         });
+    }
+
+    // --- Coins ---
+
+    /** Place coin sprites on specific walkable cells */
+    placeCoins() {
+        // Define coin positions (row, col) – adjust to taste
+        const coinPositions = [
+            { row: 3, col: 5 },
+            { row: 5, col: 3 },
+            { row: 7, col: 7 },
+            { row: 5, col: 9 },
+        ];
+
+        coinPositions.forEach(pos => {
+            if (!this.isWalkable(pos.row, pos.col)) return; // safety check
+            const px = this.gridToPixel(pos.row, pos.col);
+            const coinSprite = this.add.image(px.x, px.y, 'coin')
+                .setDepth(2);
+            coinSprite.gridRow = pos.row;
+            coinSprite.gridCol = pos.col;
+            this.coins.push(coinSprite);
+        });
+    }
+
+    /** Collect coin if one exists on the given cell */
+    tryCollectCoin(row, col) {
+        const coin = this.coins.find(c => c.gridRow === row && c.gridCol === col && c.visible);
+        if (coin) {
+            coin.setVisible(false);
+            this.collectedCoins++;
+            console.log(`[GameScene_2] Coin collected! (${this.collectedCoins}/${this.coins.length})`);
+        }
+    }
+
+    // --- Goal Check ---
+
+    checkGoal() {
+        if (this.playerGridRow === this.goalGridRow &&
+            this.playerGridCol === this.goalGridCol) {
+            console.log('[GameScene_2] Player reached the goal!');
+            this.onRoundWin();
+        }
     }
 
     enableGameInteraction(enabled) {
@@ -293,39 +369,40 @@ export class GameScene_2 extends BaseGameScene {
     }
 
     resetForNewRound() {
+        // Reset player to start grid position
+        this.playerGridRow = 8;
+        this.playerGridCol = 10;
+        this.isMoving = false;
 
-        // Reset player position to center
         if (this.player) {
-            this.player.x = this.centerX;
-            this.player.y = 1000;
+            const startPos = this.gridToPixel(this.playerGridRow, this.playerGridCol);
+            this.player.x = startPos.x;
+            this.player.y = startPos.y;
             this.player.anims.play(this.idleAnimKey, true);
         }
 
-        // Reset success counter
-        this.successCount = 0;
+        // Reset coins
+        if (this.coins) {
+            this.coins.forEach(c => c.setVisible(true));
+            this.collectedCoins = 0;
+        }
 
+        this.successCount = 0;
         console.log('[GameScene_2] Reset for new round');
     }
 
     handleLose() {
         if (this.gameState === 'gameLose' || this.gameState === 'gameWin') return;
 
-        if (!this.isSlowDown) {
-            this.failSpeed = this.slowDownSpeed;
-            this.isSlowDown = true;
-            console.log("Fail speed reduced for next rounds.");
-        } else {
-            this.currentFailCount = (this.currentFailCount || 0) + 1;
-            this.isGameActive = false;
-            this.gameState = 'gameLose';
-            this.fallingItems.forEach(item => item.destroy());
-            this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
-            if (this.gameTimer) this.gameTimer.stop();
-            this.enableGameInteraction(false);
-            this.updateRoundUI(false);
+        this.currentFailCount = (this.currentFailCount || 0) + 1;
+        this.isGameActive = false;
+        this.gameState = 'gameLose';
+        this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
+        if (this.gameTimer) this.gameTimer.stop();
+        this.enableGameInteraction(false);
+        this.updateRoundUI(false);
 
-            this.showBubble('tryagain');
-        }
+        this.showBubble('tryagain');
     }
 
     showWin() {
