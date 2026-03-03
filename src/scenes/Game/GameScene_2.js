@@ -18,7 +18,7 @@ export class GameScene_2 extends BaseGameScene {
         this.load.image('game2_npc_box_intro', `${path}game2_npc_box3.png`);
         this.load.image('game2_npc_box_win', `${path}game2_npc_box4.png`);
         this.load.image('game2_npc_box_tryagain', `${path}game2_npc_box5.png`);
-        this.load.image('game2_bg', `${path}game2_mazeobject1.png`);
+        this.load.image('pen', `${path}game2_mazeobject1.png`);
         this.load.image('coin', `${path}game2_mazeobject2.png`);
 
         this.load.image('up_btn', `${path}game2_up_button.png`);
@@ -82,68 +82,42 @@ export class GameScene_2 extends BaseGameScene {
     create() {
         this.createAnimations();
 
-        // --- Maze Grid Configuration ---
-        // Adjust originX, originY, cellSize to align with your maze background image
-        this.MAZE = {
-            originX: 85,     // Left edge of maze area (px)
-            originY: 110,     // Top edge of maze area (px)
-            cellWidth: 82,   // Width of each cell (px)
-            cellHeight: 85,  // Height of each cell (px)
-            cols: 22,
-            rows: 10,
-        };
-
-        // Maze grid: 0 = walkable path, 1 = wall (22 cols x 10 rows)
-        this.mazeGrid = [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Row 0
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Row 1
-            [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Row 2
-            [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  // Row 3
-            [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1],  // Row 4
-            [0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1],  // Row 5
-            [0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1],  // Row 6
-            [0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1],  // Row 7
-            [1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1],  // Row 8
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Row 9
-        ];
-
-        // Player grid position (start just inside the bottom opening)
-        this.playerGridRow = 8;
-        this.playerGridCol = 10;
-
-        // Goal position (NPC at top, just inside top opening)
-        this.goalGridRow = 1;
-        this.goalGridCol = 10;
-
-        // Movement lock to prevent overlapping moves
+        // Movement settings
+        this.moveStep = 80;  // Pixels per move
         this.isMoving = false;
 
-        // Coin tracking
+        // Player start position
+        this.playerStartX = this.centerX + 100;
+        this.playerStartY = 800;
+
+        // Item tracking
         this.coins = [];
-        this.collectedCoins = 0;
+        this.pens = [];
+        this.collectedPens = 0;
+        this.lives = 3;
 
         this.initGame('game2_bg', 'game2_description', false, false, {
             targetRounds: 1,
-            roundPerSeconds: 6000,
+            roundPerSeconds: 60000,
             isAllowRoundFail: false,
-            isContinuousTimer: true,
+            isContinuousTimer: false,
             sceneIndex: 2
         });
 
         // Direction buttons
-        this.leftBtn = new CustomButton(this, 1550, 900, 'left_btn', 'left_btn_click', () => {
+        this.leftBtn = new CustomButton(this, 1500, 900, 'left_btn', 'left_btn_click', () => {
             this.moveDirection('left');
         }, () => { }).setDepth(2);
 
-        this.rightBtn = new CustomButton(this, 1750, 900, 'right_btn', 'right_btn_click', () => {
+        this.rightBtn = new CustomButton(this, 1800, 900, 'right_btn', 'right_btn_click', () => {
             this.moveDirection('right');
         }, () => { }).setDepth(2);
 
-        this.upBtn = new CustomButton(this, 1650, 800, 'up_btn', 'up_btn_click', () => {
+        this.upBtn = new CustomButton(this, 1650, 750, 'up_btn', 'up_btn_click', () => {
             this.moveDirection('up');
         }, () => { }).setDepth(2);
 
-        this.downBtn = new CustomButton(this, 1650, 1000, 'down_btn', 'down_btn_click', () => {
+        this.downBtn = new CustomButton(this, 1650, 900, 'down_btn', 'down_btn_click', () => {
             this.moveDirection('down');
         }, () => { }).setDepth(2);
 
@@ -156,77 +130,47 @@ export class GameScene_2 extends BaseGameScene {
         this.idleAnimKey = `${this.genderKey}_${idleKey}_anim`;
         this.lastDirection = 'down';
 
-        // Create player at starting grid position
-        const startPos = this.gridToPixel(this.playerGridRow, this.playerGridCol);
-        this.player = this.add.sprite(this.centerX + 60, 1000, `${this.genderKey}_${idleKey}`)
+        // Create player at starting position with physics body
+        this.player = this.physics.add.sprite(this.playerStartX, this.playerStartY, `${this.genderKey}_${idleKey}`)
             .setOrigin(0.5, 0.5).setDepth(2).setScale(2);
+        this.player.body.setCollideWorldBounds(true);
 
-        // Place coins on the maze (optional collectibles)
+        // Place coins (hazards - avoid these!)
         this.placeCoins();
 
-        // Draw debug grid overlay
-        this.drawDebugGrid();
+        // Place pens (collectibles - grab these!)
+        this.placePens();
+
+        // Create wall colliders - define your walls here with pixel coordinates
+        this.createWallColliders();
     }
 
-    // --- Debug Grid ---
+    createWallColliders() {
+        this.walls = this.physics.add.staticGroup();
 
-    /** Draw a colored overlay on each cell: green = walkable, red = wall */
-    drawDebugGrid() {
-        const graphics = this.add.graphics();
-        graphics.setDepth(1); // above BG, below player/coins
+        const debugVisible = true;
+        this.createWall(this.centerX, 180, 2300, 210, debugVisible);
+        this.createWall(this.centerX + 480, 250, 800, 150, debugVisible);
+        this.createWall(this.centerX, this.centerY + 450, 2300, 210, debugVisible);
+        this.createWall(this.centerX + 550, this.centerY + 400, 500, 210, debugVisible);
+        this.createWall(800, 450, 300, 190, debugVisible);
+        this.createWall(this.centerX - 500, this.centerY + 130, 300, 250, debugVisible);
+        this.createWall(this.centerX - 450, this.centerY + 80, 420, 200, debugVisible);
 
-        for (let row = 0; row < this.MAZE.rows; row++) {
-            for (let col = 0; col < this.MAZE.cols; col++) {
-                const x = this.MAZE.originX + col * this.MAZE.cellWidth;
-                const y = this.MAZE.originY + row * this.MAZE.cellHeight;
-                const isWall = this.mazeGrid[row][col] === 1;
-
-                // Fill: green (walkable) or red (wall), semi-transparent
-                graphics.fillStyle(isWall ? 0xff0000 : 0x00ff00, 0.25);
-                graphics.fillRect(x, y, this.MAZE.cellWidth, this.MAZE.cellHeight);
-
-                // Border
-                graphics.lineStyle(1, 0xffffff, 0.4);
-                graphics.strokeRect(x, y, this.MAZE.cellWidth, this.MAZE.cellHeight);
-            }
+        // Add collision between player and walls
+        if (this.player.body) {
+            this.physics.add.collider(this.player, this.walls);
         }
 
-        // Label each cell with row,col
-        for (let row = 0; row < this.MAZE.rows; row++) {
-            for (let col = 0; col < this.MAZE.cols; col++) {
-                const cx = this.MAZE.originX + col * this.MAZE.cellWidth + this.MAZE.cellWidth / 2;
-                const cy = this.MAZE.originY + row * this.MAZE.cellHeight + this.MAZE.cellHeight / 2;
-                this.add.text(cx, cy, `${row},${col}`, {
-                    fontSize: '10px', color: '#ffffff', fontStyle: 'bold'
-                }).setOrigin(0.5).setDepth(1);
-            }
-        }
+        console.log(`[GameScene_2] Created ${this.walls.getChildren().length} wall colliders`);
     }
 
-    // --- Grid / Pixel Conversion Helpers ---
-
-    /** Convert grid (row, col) to pixel center of that cell */
-    gridToPixel(row, col) {
-        return {
-            x: this.MAZE.originX + col * this.MAZE.cellWidth + this.MAZE.cellWidth / 2,
-            y: this.MAZE.originY + row * this.MAZE.cellHeight + this.MAZE.cellHeight / 2
-        };
-    }
-
-    /** Convert pixel (x, y) to grid (row, col) */
-    pixelToGrid(x, y) {
-        return {
-            col: Math.floor((x - this.MAZE.originX) / this.MAZE.cellWidth),
-            row: Math.floor((y - this.MAZE.originY) / this.MAZE.cellHeight)
-        };
-    }
-
-    /** Check whether a grid cell is walkable (0 = path) */
-    isWalkable(row, col) {
-        if (row < 0 || row >= this.MAZE.rows || col < 0 || col >= this.MAZE.cols) {
-            return false;
-        }
-        return this.mazeGrid[row][col] === 0;
+    /** Helper to create a wall collider at given pixel position */
+    createWall(x, y, width, height, visible = false) {
+        const wall = this.add.rectangle(x, y, width, height, 0xff0000, visible ? 0.5 : 0).setDepth(500);
+        this.physics.add.existing(wall, true);
+        this.walls.add(wall);
+        return wall;
     }
 
     // --- Movement ---
@@ -234,30 +178,29 @@ export class GameScene_2 extends BaseGameScene {
     moveDirection(direction) {
         if (this.isMoving || !this.isGameActive) return;
 
-        let targetRow = this.playerGridRow;
-        let targetCol = this.playerGridCol;
+        let targetX = this.player.x;
+        let targetY = this.player.y;
         let walkAnimKey, stopAnimKey;
 
         switch (direction) {
             case 'left':
-                targetCol -= 1;
+                targetX -= this.moveStep;
                 walkAnimKey = `${this.genderKey}_leftwalking_anim`;
                 stopAnimKey = `${this.genderKey}_leftstop_anim`;
                 break;
             case 'right':
-                targetCol += 1;
+                targetX += this.moveStep;
                 walkAnimKey = `${this.genderKey}_rightwalking_anim`;
                 stopAnimKey = `${this.genderKey}_rightstop_anim`;
                 break;
             case 'up':
-                targetRow -= 1;
+                targetY -= this.moveStep;
                 walkAnimKey = `${this.genderKey}_backwalking_anim`;
                 stopAnimKey = `${this.genderKey}_backstop_anim`;
                 break;
             case 'down':
-                targetRow += 1;
+                targetY += this.moveStep;
                 walkAnimKey = `${this.genderKey}_frontwalking_anim`;
-                // girl has no frontstop, fall back to frontwalking
                 stopAnimKey = this.gender === 'M'
                     ? `${this.genderKey}_frontstop_anim`
                     : `${this.genderKey}_frontwalking_anim`;
@@ -265,88 +208,105 @@ export class GameScene_2 extends BaseGameScene {
         }
 
         this.lastDirection = direction;
-
-        // --- Wall collision check ---
-        if (!this.isWalkable(targetRow, targetCol)) {
-            // Blocked: briefly show walk anim, then revert to stop
-            this.player.anims.play(walkAnimKey, true);
-            this.time.delayedCall(200, () => {
-                this.player.anims.play(stopAnimKey, true);
-            });
-            return;
-        }
-
-        // --- Move player to the target cell ---
         this.isMoving = true;
-        const targetPos = this.gridToPixel(targetRow, targetCol);
 
         this.player.anims.play(walkAnimKey, true);
 
         this.tweens.add({
             targets: this.player,
-            x: targetPos.x,
-            y: targetPos.y,
+            x: targetX,
+            y: targetY,
             duration: 250,
             ease: 'Linear',
             onComplete: () => {
-                this.playerGridRow = targetRow;
-                this.playerGridCol = targetCol;
                 this.isMoving = false;
-
-                // Switch to idle / stop animation
                 this.player.anims.play(stopAnimKey, true);
 
-                // Pick up any coin on this cell
-                this.tryCollectCoin(targetRow, targetCol);
+                // Check coin collision (hazard - lose a life)
+                this.checkCoinCollision();
 
-                // Check if player reached the goal (NPC)
-                this.checkGoal();
+                // Check pen collection
+                this.checkPenCollection();
             }
         });
     }
 
-    // --- Coins ---
+    /** Check collision with coins using distance */
+    checkCoinCollision() {
+        const hitRadius = 40;
+        for (const coin of this.coins) {
+            if (!coin.visible) continue;
+            const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, coin.x, coin.y);
+            if (dist < hitRadius) {
+                coin.setVisible(false);
+                this.lives--;
+                console.log(`[GameScene_2] Coin hit! Lives: ${this.lives}`);
+                this.handleLose();
+                return;
+            }
+        }
+    }
 
-    /** Place coin sprites on specific walkable cells */
+    /** Check collection of pens using distance */
+    checkPenCollection() {
+        const pickupRadius = 40;
+        for (const pen of this.pens) {
+            if (!pen.visible) continue;
+            const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, pen.x, pen.y);
+            if (dist < pickupRadius) {
+                pen.setVisible(false);
+                this.collectedPens++;
+                console.log(`[GameScene_2] Pen collected! (${this.collectedPens}/3)`);
+                if (this.collectedPens >= 3) {
+                    console.log('[GameScene_2] 3 pens collected! You win!');
+                    this.onRoundWin();
+                }
+                return;
+            }
+        }
+    }
+
+    // --- Item Placement ---
+
+    /** Place coins at fixed pixel positions (hazards - avoid these!) */
     placeCoins() {
-        // Define coin positions (row, col) – adjust to taste
+        // Define coin positions using pixel coordinates
         const coinPositions = [
-            { row: 3, col: 5 },
-            { row: 5, col: 3 },
-            { row: 7, col: 7 },
-            { row: 5, col: 9 },
+            { x: 300, y: 400 },
+            { x: 500, y: 300 },
+            { x: 700, y: 500 },
+            { x: 900, y: 350 },
+            { x: 1100, y: 450 },
+            { x: 600, y: 600 },
+            { x: 800, y: 250 },
         ];
 
         coinPositions.forEach(pos => {
-            if (!this.isWalkable(pos.row, pos.col)) return; // safety check
-            const px = this.gridToPixel(pos.row, pos.col);
-            const coinSprite = this.add.image(px.x, px.y, 'coin')
-                .setDepth(2);
-            coinSprite.gridRow = pos.row;
-            coinSprite.gridCol = pos.col;
+            const coinSprite = this.add.image(pos.x, pos.y, 'coin').setDepth(2);
             this.coins.push(coinSprite);
         });
+        console.log(`[GameScene_2] Placed ${this.coins.length} coins`);
     }
 
-    /** Collect coin if one exists on the given cell */
-    tryCollectCoin(row, col) {
-        const coin = this.coins.find(c => c.gridRow === row && c.gridCol === col && c.visible);
-        if (coin) {
-            coin.setVisible(false);
-            this.collectedCoins++;
-            console.log(`[GameScene_2] Coin collected! (${this.collectedCoins}/${this.coins.length})`);
-        }
+    /** Place pens at fixed pixel positions (collectibles - grab these!) */
+    placePens() {
+        // Define pen positions using pixel coordinates
+        const penPositions = [
+            { x: 400, y: 500 },
+            { x: 1000, y: 300 },
+            { x: 750, y: 400 },
+            { x: 550, y: 700 },
+            { x: 1200, y: 550 },
+        ];
+
+        penPositions.forEach(pos => {
+            const penSprite = this.add.image(pos.x, pos.y, 'pen').setDepth(2);
+            this.pens.push(penSprite);
+        });
+        console.log(`[GameScene_2] Placed ${this.pens.length} pens`);
     }
 
-    // --- Goal Check ---
 
-    checkGoal() {
-        if (this.playerGridRow === this.goalGridRow &&
-            this.playerGridCol === this.goalGridCol) {
-            console.log('[GameScene_2] Player reached the goal!');
-            this.onRoundWin();
-        }
-    }
 
     enableGameInteraction(enabled) {
         this.canSpawn = enabled;
@@ -368,42 +328,45 @@ export class GameScene_2 extends BaseGameScene {
         }
     }
 
-    resetForNewRound() {
-        // Reset player to start grid position
-        this.playerGridRow = 8;
-        this.playerGridCol = 10;
+    /** Reset player position only */
+    resetPlayerPosition() {
         this.isMoving = false;
+        if (this.player) {
+            this.player.x = this.playerStartX;
+            this.player.y = this.playerStartY;
+            this.player.anims.play(this.idleAnimKey, true);
+        }
+    }
+
+    resetForNewRound() {
+        this.isMoving = false;
+        this.lives = 3;
+        this.collectedPens = 0;
 
         if (this.player) {
-            const startPos = this.gridToPixel(this.playerGridRow, this.playerGridCol);
-            this.player.x = startPos.x;
-            this.player.y = startPos.y;
+            this.player.x = this.playerStartX;
+            this.player.y = this.playerStartY;
             this.player.anims.play(this.idleAnimKey, true);
         }
 
-        // Reset coins
+        // Destroy and re-place items
         if (this.coins) {
-            this.coins.forEach(c => c.setVisible(true));
-            this.collectedCoins = 0;
+            this.coins.forEach(c => c.destroy());
+            this.coins = [];
         }
+        if (this.pens) {
+            this.pens.forEach(p => p.destroy());
+            this.pens = [];
+        }
+        this.placeCoins();
+        this.placePens();
 
-        this.successCount = 0;
-        console.log('[GameScene_2] Reset for new round');
+        console.log('[GameScene_2] Full reset for new round');
     }
 
-    handleLose() {
-        if (this.gameState === 'gameLose' || this.gameState === 'gameWin') return;
-
-        this.currentFailCount = (this.currentFailCount || 0) + 1;
-        this.isGameActive = false;
-        this.gameState = 'gameLose';
-        this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
-        if (this.gameTimer) this.gameTimer.stop();
-        this.enableGameInteraction(false);
-        this.updateRoundUI(false);
-
-        this.showBubble('tryagain');
-    }
+    // Uses base class handleLose() with isAllowRoundFail: true
+    // - Rounds 0,1: shows tryagain bubble → click → nextRound → resetPlayerPosition
+    // - Round 2 (last life): shows tryagain → click → fail panel (game over)
 
     showWin() {
         this.showObjectPanel();
