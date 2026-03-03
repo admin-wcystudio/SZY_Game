@@ -87,7 +87,7 @@ export class GameScene_2 extends BaseGameScene {
         this.isMoving = false;
 
         // Player start position
-        this.playerStartX = this.centerX + 100;
+        this.playerStartX = this.centerX + 50;
         this.playerStartY = 800;
 
         // Item tracking
@@ -135,18 +135,17 @@ export class GameScene_2 extends BaseGameScene {
             .setOrigin(0.5, 0.5).setDepth(2).setScale(2);
         this.player.body.setCollideWorldBounds(true);
 
-        // Place coins (hazards - avoid these!)
+
         this.placeCoins();
 
-        // Place pens (collectibles - grab these!)
         this.placePens();
 
-        // Create wall colliders - define your walls here with pixel coordinates
         this.createWallColliders();
     }
 
     createWallColliders() {
         this.walls = this.physics.add.staticGroup();
+        this.wallRects = [];
 
         const debugVisible = true;
         // Outer boundary walls
@@ -161,11 +160,7 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(this.centerX - 430, this.centerY + 100, 400, 160, debugVisible, true);
         this.createWall(this.centerX - 150, this.centerY + 330, 320, 150, debugVisible, true);
         this.createWall(1000, 680, 320, 80, debugVisible, true);
-
-
         this.createWall(1050, 500, 800, 100, debugVisible, true);
-
-
         // Top-left / right grass/tree area
         this.createWall(100, 350, 250, 180, debugVisible, true);
         // Left side vertical grass path
@@ -175,20 +170,13 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(120, 850, 100, 100, debugVisible, true);
         this.createWall(1120, 850, 120, 120, debugVisible, true);
         this.createWall(1820, 750, 150, 120, debugVisible, true);
-
         this.createWall(1870, 350, 100, 980, debugVisible, true);
-
-
         this.createWall(400, 320, 150, 100, debugVisible, true);
-
         this.createWall(1650, 320, 280, 200, debugVisible, true);
         this.createWall(450, 420, 280, 100, debugVisible, true);
-
         this.createWall(900, 560, 140, 180, debugVisible, true);
         this.createWall(1350, 600, 180, 340, debugVisible, true);
         this.createWall(1620, 690, 240, 350, debugVisible, true);
-
-
 
         // Add collision between player and walls
         if (this.player.body) {
@@ -201,27 +189,20 @@ export class GameScene_2 extends BaseGameScene {
     /** Helper to create a wall collider at given pixel position */
     createWall(x, y, width, height, visible = false, confirmed = false) {
         const color = confirmed ? 0x00ff00 : 0xff0000; // Green if confirmed, red if not
-        const wall = this.add.rectangle(x, y, width, height, color, visible ? 0.5 : 0).setDepth(500);
+        const wall = this.add.rectangle(x, y, width, height, color, 0.5).setDepth(500);
         this.physics.add.existing(wall, true);
         this.walls.add(wall);
 
-        // Add debug label if visible
-        if (visible) {
-            const label = `x:${Math.round(x)} y:${Math.round(y)}\nw:${width} h:${height}`;
-            this.add.text(x, y, label, {
-                fontSize: '14px',
-                fontFamily: 'Arial',
-                color: '#ffffff',
-                backgroundColor: confirmed ? '#006600' : '#000000',
-                padding: { x: 4, y: 2 },
-                align: 'center'
-            }).setOrigin(0.5, 0.5).setDepth(501);
-        }
+        this.wallRects.push({
+            x: x - width / 2,
+            y: y - height / 2,
+            width: width,
+            height: height
+        });
 
         return wall;
     }
 
-    // --- Movement ---
 
     moveDirection(direction) {
         if (this.isMoving || !this.isGameActive) return;
@@ -255,6 +236,12 @@ export class GameScene_2 extends BaseGameScene {
                 break;
         }
 
+        // Check if target position would collide with a wall
+        if (this.wouldCollideWithWall(targetX, targetY)) {
+            console.log('[GameScene_2] Wall collision detected, cannot move');
+            return;
+        }
+
         this.lastDirection = direction;
         this.isMoving = true;
 
@@ -270,10 +257,8 @@ export class GameScene_2 extends BaseGameScene {
                 this.isMoving = false;
                 this.player.anims.play(stopAnimKey, true);
 
-                // Check coin collision (hazard - lose a life)
                 this.checkCoinCollision();
 
-                // Check pen collection
                 this.checkPenCollection();
             }
         });
@@ -316,9 +301,8 @@ export class GameScene_2 extends BaseGameScene {
 
     // --- Item Placement ---
 
-    /** Place coins at fixed pixel positions (hazards - avoid these!) */
     placeCoins() {
-        // Define coin positions in walkable areas only
+
         const coinPositions = [
             { x: 250, y: 330 },
             { x: 100, y: 500 },
@@ -338,9 +322,8 @@ export class GameScene_2 extends BaseGameScene {
         console.log(`[GameScene_2] Placed ${this.coins.length} coins`);
     }
 
-    /** Place pens at fixed pixel positions (collectibles - grab these!) */
     placePens() {
-        // Define pen positions in walkable areas only
+
         const penPositions = [
             { x: 100, y: 700 },
             { x: 280, y: 420 },   // Upper-left corridor
@@ -359,8 +342,6 @@ export class GameScene_2 extends BaseGameScene {
         });
         console.log(`[GameScene_2] Placed ${this.pens.length} pens`);
     }
-
-
 
     enableGameInteraction(enabled) {
         this.canSpawn = enabled;
@@ -415,12 +396,7 @@ export class GameScene_2 extends BaseGameScene {
         this.placeCoins();
         this.placePens();
 
-        console.log('[GameScene_2] Full reset for new round');
     }
-
-    // Uses base class handleLose() with isAllowRoundFail: true
-    // - Rounds 0,1: shows tryagain bubble → click → nextRound → resetPlayerPosition
-    // - Round 2 (last life): shows tryagain → click → fail panel (game over)
 
     showWin() {
         this.showObjectPanel();
