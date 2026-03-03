@@ -97,7 +97,7 @@ export class GameScene_2 extends BaseGameScene {
 
         this.initGame('game2_bg', 'game2_description', false, false, {
             targetRounds: 3,
-            roundPerSeconds: 60000,
+            roundPerSeconds: 60,
             isAllowRoundFail: true,
             isContinuousTimer: true,
             sceneIndex: 2
@@ -133,11 +133,14 @@ export class GameScene_2 extends BaseGameScene {
         this.player = this.add.sprite(this.playerStartX, this.playerStartY, `${this.genderKey}_${idleKey}`)
             .setOrigin(0.5, 0.5).setDepth(2).setScale(2);
 
+
+
+        this.maxCoins = 5;
+        this.maxPens = 6;
         this.placeCoins();
-
         this.placePens();
-
         this.createWallColliders();
+
     }
 
     createWallColliders() {
@@ -146,10 +149,10 @@ export class GameScene_2 extends BaseGameScene {
 
         const debugVisible = true;
         // Outer boundary walls
-        this.createWall(this.centerX, 180, 2300, 210, debugVisible, true);
+        this.createWall(this.centerX, 160, 2300, 210, debugVisible, true);
         this.createWall(this.centerX + 480, 250, 800, 150, debugVisible, true);
         this.createWall(this.centerX, this.centerY + 480, 2300, 210, debugVisible, true);
-        this.createWall(this.centerX + 550, this.centerY + 400, 500, 210, debugVisible, true);
+        this.createWall(this.centerX + 550, this.centerY + 430, 500, 210, debugVisible, true);
 
         // Interior walls
         this.createWall(800, 450, 290, 190, debugVisible, true);
@@ -157,7 +160,7 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(this.centerX - 430, this.centerY + 100, 400, 160, debugVisible, true);
         this.createWall(this.centerX - 150, this.centerY + 330, 320, 150, debugVisible, true);
         this.createWall(1000, 680, 320, 80, debugVisible, true);
-        this.createWall(1050, 500, 800, 100, debugVisible, true);
+        this.createWall(1050, 500, 750, 100, debugVisible, true);
         // Top-left / right grass/tree area
         this.createWall(100, 350, 250, 180, debugVisible, true);
         // Left side vertical grass path
@@ -165,23 +168,22 @@ export class GameScene_2 extends BaseGameScene {
         // Bottom-left grass
         this.createWall(200, 800, 80, 500, debugVisible, true);
         this.createWall(120, 850, 100, 100, debugVisible, true);
+        this.createWall(400, 320, 150, 100, debugVisible, true);
+        this.createWall(450, 420, 280, 100, debugVisible, true);
+
         this.createWall(1120, 850, 120, 120, debugVisible, true);
         this.createWall(1820, 750, 150, 120, debugVisible, true);
         this.createWall(1870, 350, 100, 980, debugVisible, true);
-        this.createWall(400, 320, 150, 100, debugVisible, true);
-        this.createWall(1650, 320, 280, 200, debugVisible, true);
-        this.createWall(450, 420, 280, 100, debugVisible, true);
         this.createWall(900, 560, 140, 180, debugVisible, true);
-        this.createWall(1350, 600, 180, 340, debugVisible, true);
+        this.createWall(1350, 600, 150, 330, debugVisible, true);
         this.createWall(1620, 690, 240, 350, debugVisible, true);
+        this.createWall(1650, 320, 280, 200, debugVisible, true);
 
         console.log(`[GameScene_2] Created ${this.walls.getChildren().length} wall colliders`);
     }
-
-    /** Helper to create a wall collider at given pixel position */
     createWall(x, y, width, height, visible = false, confirmed = false) {
         const color = confirmed ? 0x00ff00 : 0xff0000; // Green if confirmed, red if not
-        const wall = this.add.rectangle(x, y, width, height, color, 0.5).setDepth(500);
+        const wall = this.add.rectangle(x, y, width, height, color, 0.0).setDepth(500);
         this.physics.add.existing(wall, true);
         this.walls.add(wall);
 
@@ -260,7 +262,7 @@ export class GameScene_2 extends BaseGameScene {
 
     wouldCollideWithWall(x, y) {
         // Just checking a very precise 10x10 area at the character's feet coordinates
-        const hitBBoxSize = 10;
+        const hitBBoxSize = 15;
         const playerRect = new Phaser.Geom.Rectangle(x - hitBBoxSize / 2, y + 40, hitBBoxSize, hitBBoxSize);
 
         for (const wall of this.wallRects) {
@@ -274,7 +276,7 @@ export class GameScene_2 extends BaseGameScene {
 
     /** Check collision with coins using distance */
     checkCoinCollision() {
-        const hitRadius = 40;
+        const hitRadius = 60;
         for (const coin of this.coins) {
             if (!coin.visible) continue;
             const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, coin.x, coin.y);
@@ -307,8 +309,6 @@ export class GameScene_2 extends BaseGameScene {
         }
     }
 
-    // --- Item Placement ---
-
     placeCoins() {
 
         const coinPositions = [
@@ -323,7 +323,10 @@ export class GameScene_2 extends BaseGameScene {
             { x: 1780, y: 650 },
         ];
 
+        Phaser.Utils.Array.Shuffle(coinPositions);
+
         coinPositions.forEach(pos => {
+            if (this.coins.length == this.maxCoins) return;
             const coinSprite = this.add.image(pos.x, pos.y, 'coin').setDepth(2);
             this.coins.push(coinSprite);
         });
@@ -344,7 +347,10 @@ export class GameScene_2 extends BaseGameScene {
             { x: 1780, y: 450 },// Far right upper
         ];
 
+        Phaser.Utils.Array.Shuffle(penPositions);
+
         penPositions.forEach(pos => {
+            if (this.pens.length == this.maxPens) return;
             const penSprite = this.add.image(pos.x, pos.y, 'pen').setDepth(2);
             this.pens.push(penSprite);
         });
