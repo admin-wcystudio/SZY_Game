@@ -157,13 +157,13 @@ export class GameScene_2 extends BaseGameScene {
 
         // Interior walls
         this.createWall(800, 450, 300, 190, debugVisible, true);
-        this.createWall(this.centerX - 500, this.centerY + 130, 300, 250, debugVisible, true);
-        this.createWall(this.centerX - 450, this.centerY + 80, 420, 200, debugVisible, true);
+        this.createWall(this.centerX - 520, this.centerY + 130, 280, 250, debugVisible, true);
+        this.createWall(this.centerX - 430, this.centerY + 80, 440, 200, debugVisible, true);
         this.createWall(this.centerX - 150, this.centerY + 330, 320, 150, debugVisible, true);
         this.createWall(1000, 680, 320, 80, debugVisible, true);
 
 
-        this.createWall(1000, 500, 800, 80, debugVisible, true);
+        this.createWall(1050, 500, 800, 100, debugVisible, true);
 
 
         // Top-left / right grass/tree area
@@ -171,20 +171,22 @@ export class GameScene_2 extends BaseGameScene {
         // Left side vertical grass path
         this.createWall(0, 520, 150, 980, debugVisible, true);
         // Bottom-left grass
-        this.createWall(200, 700, 100, 500, debugVisible, true);
+        this.createWall(200, 800, 100, 500, debugVisible, true);
+        this.createWall(120, 850, 100, 100, debugVisible, true);
+        this.createWall(1120, 850, 120, 120, debugVisible, true);
+        this.createWall(1820, 750, 150, 120, debugVisible, true);
 
         this.createWall(1850, 350, 100, 980, debugVisible, true);
 
 
-        this.createWall(420, 420, 300, 100, debugVisible, true);
+        this.createWall(400, 320, 150, 100, debugVisible, true);
+
+        this.createWall(1650, 320, 280, 200, debugVisible, true);
+        this.createWall(420, 420, 280, 100, debugVisible, true);
 
         this.createWall(900, 560, 140, 180, debugVisible, true);
-        this.createWall(1350, 600, 180, 320, debugVisible, true);
-        this.createWall(1630, 660, 220, 320, debugVisible, true);
-
-
-
-
+        this.createWall(1350, 600, 180, 340, debugVisible, true);
+        this.createWall(1620, 660, 240, 350, debugVisible, true);
 
 
 
