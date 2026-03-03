@@ -149,13 +149,44 @@ export class GameScene_2 extends BaseGameScene {
         this.walls = this.physics.add.staticGroup();
 
         const debugVisible = true;
-        this.createWall(this.centerX, 180, 2300, 210, debugVisible);
-        this.createWall(this.centerX + 480, 250, 800, 150, debugVisible);
-        this.createWall(this.centerX, this.centerY + 450, 2300, 210, debugVisible);
-        this.createWall(this.centerX + 550, this.centerY + 400, 500, 210, debugVisible);
-        this.createWall(800, 450, 300, 190, debugVisible);
-        this.createWall(this.centerX - 500, this.centerY + 130, 300, 250, debugVisible);
-        this.createWall(this.centerX - 450, this.centerY + 80, 420, 200, debugVisible);
+        // Outer boundary walls
+        this.createWall(this.centerX, 180, 2300, 210, debugVisible, true);
+        this.createWall(this.centerX + 480, 250, 800, 150, debugVisible, true);
+        this.createWall(this.centerX, this.centerY + 450, 2300, 210, debugVisible, true);
+        this.createWall(this.centerX + 550, this.centerY + 400, 500, 210, debugVisible, true);
+
+        // Interior walls
+        this.createWall(800, 450, 300, 190, debugVisible, true);
+        this.createWall(this.centerX - 500, this.centerY + 130, 300, 250, debugVisible, true);
+        this.createWall(this.centerX - 450, this.centerY + 80, 420, 200, debugVisible, true);
+        this.createWall(this.centerX - 150, this.centerY + 330, 320, 150, debugVisible, true);
+        this.createWall(1000, 680, 320, 80, debugVisible, true);
+
+
+        this.createWall(1000, 500, 800, 80, debugVisible, true);
+
+
+        // Top-left / right grass/tree area
+        this.createWall(100, 350, 250, 180, debugVisible, true);
+        // Left side vertical grass path
+        this.createWall(0, 520, 150, 980, debugVisible, true);
+        // Bottom-left grass
+        this.createWall(200, 700, 100, 500, debugVisible, true);
+
+        this.createWall(1850, 350, 100, 980, debugVisible, true);
+
+
+        this.createWall(420, 420, 300, 100, debugVisible, true);
+
+        this.createWall(900, 560, 140, 180, debugVisible, true);
+        this.createWall(1350, 600, 180, 320, debugVisible, true);
+        this.createWall(1630, 660, 220, 320, debugVisible, true);
+
+
+
+
+
+
 
         // Add collision between player and walls
         if (this.player.body) {
@@ -166,10 +197,25 @@ export class GameScene_2 extends BaseGameScene {
     }
 
     /** Helper to create a wall collider at given pixel position */
-    createWall(x, y, width, height, visible = false) {
-        const wall = this.add.rectangle(x, y, width, height, 0xff0000, visible ? 0.5 : 0).setDepth(500);
+    createWall(x, y, width, height, visible = false, confirmed = false) {
+        const color = confirmed ? 0x00ff00 : 0xff0000; // Green if confirmed, red if not
+        const wall = this.add.rectangle(x, y, width, height, color, visible ? 0.5 : 0).setDepth(500);
         this.physics.add.existing(wall, true);
         this.walls.add(wall);
+
+        // Add debug label if visible
+        if (visible) {
+            const label = `x:${Math.round(x)} y:${Math.round(y)}\nw:${width} h:${height}`;
+            this.add.text(x, y, label, {
+                fontSize: '14px',
+                fontFamily: 'Arial',
+                color: '#ffffff',
+                backgroundColor: confirmed ? '#006600' : '#000000',
+                padding: { x: 4, y: 2 },
+                align: 'center'
+            }).setOrigin(0.5, 0.5).setDepth(501);
+        }
+
         return wall;
     }
 
