@@ -79,7 +79,9 @@ export class GameScene_4 extends BaseGameScene {
         ];
 
         this.hitButton = new CustomButton(this, 1720, 880,
-            'game4_hit_button', 'game4_hit_button_select', () => this.handleHitButtonClick())
+            'game4_hit_button', 'game4_hit_button_select',
+            () => this.handleHitButtonClick()
+        )
             .setDepth(502);
 
         // Add hover effect to hit button
@@ -97,6 +99,7 @@ export class GameScene_4 extends BaseGameScene {
 
         this.isHit = true;
         this.arrowSpeed = 0;
+        this.hitButton.setTexture('game4_hit_button'); // Reset button texture on click
         this.checkHitSuccess();
     }
 
