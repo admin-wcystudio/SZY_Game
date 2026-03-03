@@ -94,13 +94,12 @@ export class GameScene_2 extends BaseGameScene {
         this.coins = [];
         this.pens = [];
         this.collectedPens = 0;
-        this.lives = 3;
 
         this.initGame('game2_bg', 'game2_description', false, false, {
-            targetRounds: 1,
+            targetRounds: 3,
             roundPerSeconds: 60000,
-            isAllowRoundFail: false,
-            isContinuousTimer: false,
+            isAllowRoundFail: true,
+            isContinuousTimer: true,
             sceneIndex: 2
         });
 
@@ -130,11 +129,9 @@ export class GameScene_2 extends BaseGameScene {
         this.idleAnimKey = `${this.genderKey}_${idleKey}_anim`;
         this.lastDirection = 'down';
 
-        // Create player at starting position with physics body
-        this.player = this.physics.add.sprite(this.playerStartX, this.playerStartY, `${this.genderKey}_${idleKey}`)
+        // Create player at starting position as a normal sprite (NO physics body)
+        this.player = this.add.sprite(this.playerStartX, this.playerStartY, `${this.genderKey}_${idleKey}`)
             .setOrigin(0.5, 0.5).setDepth(2).setScale(2);
-        this.player.body.setCollideWorldBounds(true);
-
 
         this.placeCoins();
 
@@ -151,7 +148,7 @@ export class GameScene_2 extends BaseGameScene {
         // Outer boundary walls
         this.createWall(this.centerX, 180, 2300, 210, debugVisible, true);
         this.createWall(this.centerX + 480, 250, 800, 150, debugVisible, true);
-        this.createWall(this.centerX, this.centerY + 450, 2300, 210, debugVisible, true);
+        this.createWall(this.centerX, this.centerY + 480, 2300, 210, debugVisible, true);
         this.createWall(this.centerX + 550, this.centerY + 400, 500, 210, debugVisible, true);
 
         // Interior walls
@@ -177,11 +174,6 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(900, 560, 140, 180, debugVisible, true);
         this.createWall(1350, 600, 180, 340, debugVisible, true);
         this.createWall(1620, 690, 240, 350, debugVisible, true);
-
-        // Add collision between player and walls
-        if (this.player.body) {
-            this.physics.add.collider(this.player, this.walls);
-        }
 
         console.log(`[GameScene_2] Created ${this.walls.getChildren().length} wall colliders`);
     }
@@ -236,9 +228,11 @@ export class GameScene_2 extends BaseGameScene {
                 break;
         }
 
-        // Check if target position would collide with a wall
+        console.log(`[GameScene_2] Attempting move ${direction} to (${targetX}, ${targetY})`);
+
+        // Manual intersection check against walls using points instead of Arcade physics
         if (this.wouldCollideWithWall(targetX, targetY)) {
-            console.log('[GameScene_2] Wall collision detected, cannot move');
+            console.log('[GameScene_2] Blocked by wall!');
             return;
         }
 
@@ -247,6 +241,7 @@ export class GameScene_2 extends BaseGameScene {
 
         this.player.anims.play(walkAnimKey, true);
 
+        // Smoothly tween the position since arcade physics velocity isn't being used
         this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -258,10 +253,23 @@ export class GameScene_2 extends BaseGameScene {
                 this.player.anims.play(stopAnimKey, true);
 
                 this.checkCoinCollision();
-
                 this.checkPenCollection();
             }
         });
+    }
+
+    wouldCollideWithWall(x, y) {
+        // Just checking a very precise 10x10 area at the character's feet coordinates
+        const hitBBoxSize = 10;
+        const playerRect = new Phaser.Geom.Rectangle(x - hitBBoxSize / 2, y + 40, hitBBoxSize, hitBBoxSize);
+
+        for (const wall of this.wallRects) {
+            const wallRect = new Phaser.Geom.Rectangle(wall.x, wall.y, wall.width, wall.height);
+            if (Phaser.Geom.Intersects.RectangleToRectangle(playerRect, wallRect)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Check collision with coins using distance */
@@ -307,7 +315,7 @@ export class GameScene_2 extends BaseGameScene {
             { x: 250, y: 330 },
             { x: 100, y: 500 },
             { x: 600, y: 350 },
-            { x: 750, y: 600 },
+            { x: 780, y: 600 },
             { x: 850, y: 280 },
             { x: 1200, y: 380 },
             { x: 1200, y: 580 },
