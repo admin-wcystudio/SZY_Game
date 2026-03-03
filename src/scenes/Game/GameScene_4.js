@@ -11,284 +11,241 @@ export class GameScene_4 extends BaseGameScene {
 
     preload() {
         const path = 'assets/images/Game_4/';
-        const player = JSON.parse(localStorage.getItem('player') || '{"gender":"M"}');
-        this.genderKey = player.gender === 'M' ? 'boy' : 'girl';
 
-        this.load.image('confirm_button', `${path}game4_confirm_button.png`);
-        this.load.image('confirm_button_select', `${path}game4_confirm_button_select.png`);
-
-        // if (this.genderKey === 'boy') {
-        //     this.load.image('game6_npc_box_intro', `${path}game6_npc_boy_box3.png`);
-        // } else {
-        //     this.load.image('game6_npc_box_intro', `${path}game6_npc_girl_box3.png`);
-        // }
-        this.load.image('game4_npc_box_win', `${path}game4_npc_box2.png`);
-        this.load.image('game4_npc_box_tryagain', `${path}game4_npc_box3.png`);
-
-        // this.load.image('game4_boy_npc_box1', `${path}game6_npc_boy_box3.png`);
-        // this.load.image('game4_boy_npc_box2', `${path}game6_npc_boy_box5.png`);
-
-        // this.load.image('game4_girl_npc_box1', `${path}game6_npc_girl_box3.png`);
-        // this.load.image('game4_girl_npc_box2', `${path}game6_npc_girl_box5.png`);
-
-
-        for (let i = 1; i <= 6; i++) {
-            this.load.image(`game4_object${i}`, `${path}game4_object${i}.png`);
-        }
-
-        this.load.image('game4_border1', `${path}game4_border1.png`);
-        this.load.image('game4_border2', `${path}game4_border2.png`);
-        this.load.image('game4_border3', `${path}game4_border3.png`);
-
-    }
-
-    create() {
-        // Initialize dimensions
         this.width = this.cameras.main.width;
         this.height = this.cameras.main.height;
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
 
-        this.initGame('game4_bg', 'game4_description', true, false, {
-            targetRounds: 1,
-            roundPerSeconds: 600,
+        this.load.image('game4_npc_box_intro', `${path}game4_npc_box5.png`);
+        this.load.image('game4_npc_box_win', `${path}game4_npc_box3.png`);
+        this.load.image('game4_npc_box_tryagain', `${path}game4_npc_box4.png`);
+
+        this.load.image('game4_hit_button', `${path}game4_click_button.png`);
+        this.load.image('game4_hit_button_select', `${path}game4_click_button_select.png`);
+        this.load.image('game4_target_arrow', `${path}game4_arrow.png`);
+
+        for (let i = 1; i <= 3; i++) {
+            this.load.image(`game4_q${i}`, `${path}game4_q${i}.png`);
+            this.load.image(`game4_q${i}_bar`, `${path}game4_q${i}_bar.png`);
+        }
+
+    }
+
+    create() {
+        this.arrow = this.add.image(this.centerX, this.centerY - 100, 'game4_target_arrow')
+            .setDepth(501).setVisible(true);
+
+        this.bar = this.add.image(this.centerX, this.centerY + 100, 'game4_q1_bar')
+            .setDepth(500).setVisible(true);
+
+        this.initGame('game4_bg', 'game4_description', false, false, {
+            targetRounds: 3,
+            roundPerSeconds: 60,
             isAllowRoundFail: false,
-            isContinuousTimer: false,
+            isContinuousTimer: true,
             sceneIndex: 4
         });
 
-        // Create confirm button
-        this.confirmBtn = new CustomButton(this, this.centerX, this.height - 100,
-            'confirm_button', 'confirm_button_select', () => {
-                this.checkAnswer();
-            });
+        this.allowToStart = false;
 
-        this.confirmBtn.setDepth(600).setVisible(false);
+    }
+
+    update() {
+        if (!this.arrow || this.isHit || !this.allowToStart) return;
+
+        // Bouncing logic
+        this.arrow.x += this.arrowSpeed;
+
+        if (this.arrow.x >= 1580) {
+            this.arrow.x = 1580;
+            this.arrowSpeed = -Math.abs(this.arrowSpeed); // Turn left
+        } else if (this.arrow.x <= 350) {
+            this.arrow.x = 350;
+            this.arrowSpeed = Math.abs(this.arrowSpeed); // Turn right
+        }
     }
 
     setupGameObjects() {
+        this.arrowSpeed = 10; // Initial speed of the arrow
+        this.isHit = false;
+        this.successfulHits = 0; // Track number of successful hits
 
-        this.border1 = this.add.image(this.centerX - 500, this.centerY, 'game4_border1').setDepth(500).setVisible(true);
-        this.border2 = this.add.image(this.centerX, this.centerY, 'game4_border2').setDepth(500).setVisible(true);
-        this.border3 = this.add.image(this.centerX + 500, this.centerY, 'game4_border3').setDepth(500).setVisible(true);
-
-        // Track which object is at each position
-        this.positionObjects = {};
-
-        // Border 1 (left) - 4 positions in a 2x2 grid
-        this.snapPositions = [
-            // Border 1 positions
-            { x: this.centerX - 500, y: this.centerY - 90, isOccupied: false },
-            { x: this.centerX - 500, y: this.centerY + 110, isOccupied: false },
-            // // Border 2 positions
-            { x: this.centerX, y: this.centerY - 90, isOccupied: false },
-            { x: this.centerX, y: this.centerY + 110, isOccupied: false },
-            // // Border 3 positions
-            { x: this.centerX + 500, y: this.centerY - 90, isOccupied: false },
-            { x: this.centerX + 500, y: this.centerY + 110, isOccupied: false },
-
+        // Define success ranges for each bar (min and max x positions)
+        this.hitRanges = [
+            { min: 200, max: 650 },  // Bar 1 success range
+            { min: 1250, max: 1550 },  // Bar 2 success range
+            { min: 650, max: 1050 }   // Bar 3 success range
         ];
 
-        this.snapRadius = 80; // Distance threshold for snapping
+        this.hitButton = new CustomButton(this, 1720, 880,
+            'game4_hit_button', 'game4_hit_button_select', () => this.handleHitButtonClick())
+            .setDepth(502);
 
-        const spawnPositions = [
-            { x: this.centerX - 780, y: this.centerY },
-            { x: this.centerX - 600, y: this.centerY + 380 },
-            { x: this.centerX + 600, y: this.centerY + 320 },
-            { x: this.centerX + 200, y: this.centerY + 380 },
-            { x: this.centerX - 200, y: this.centerY + 320 },
-            { x: this.centerX + 780, y: this.centerY }
-        ];
-
-
-
-        const shuffledPositions = Phaser.Utils.Array.Shuffle([...spawnPositions]);
-
-        this.objects = [];
-        for (let i = 1; i <= 6; i++) {
-            const pos = shuffledPositions[i - 1];
-            const obj = this.add.image(pos.x, pos.y, `game4_object${i}`)
-                .setDepth(505)
-                .setInteractive({ draggable: true })
-                .setVisible(false);
-
-            obj.objectId = i;
-            obj.originalX = pos.x;
-            obj.originalY = pos.y;
-
-            this.objects.push(obj);
-        }
-        this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
-            gameObject.x = dragX;
-            gameObject.y = dragY;
+        // Add hover effect to hit button
+        this.hitButton.on('pointerover', () => {
+            this.hitButton.setTexture('game4_hit_button_select');
         });
 
-        // Add dragend event for snapping
-        this.input.on('dragend', (pointer, gameObject) => {
-            const result = this.findNearestSnapPosition(gameObject.x, gameObject.y, gameObject);
-            if (result.snapPos) {
-                // Snap to position with animation
-                this.tweens.add({
-                    targets: gameObject,
-                    x: result.snapPos.x,
-                    y: result.snapPos.y,
-                    duration: 150,
-                    ease: 'Power2',
-                    onComplete: () => {
-                        // Check if all border 1 positions are occupied
-                        this.checkIfAllOccupied();
-                    }
-                });
-            } else {
-                console.log(`[SNAP] No snap position found within ${this.snapRadius}px radius`);
-            }
+        this.hitButton.on('pointerout', () => {
+            this.hitButton.setTexture('game4_hit_button');
         });
-
-        this.border1_correctObjects = [1, 4];
-        this.border2_correctObjects = [2, 5];
-        this.border3_correctObjects = [3, 6];
-        //this.drawDebug();
-
     }
 
-    findNearestSnapPosition(x, y, gameObject = null) {
-        let nearestPos = null;
-        let nearestIndex = -1;
-        let minDistance = this.snapRadius;
+    handleHitButtonClick() {
+        if (this.isHit || !this.isGameActive) return; // Prevent multiple clicks
 
-        for (let i = 0; i < this.snapPositions.length; i++) {
-            const pos = this.snapPositions[i];
-            const distance = Phaser.Math.Distance.Between(x, y, pos.x, pos.y);
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearestPos = pos;
-                nearestIndex = i;
-            }
-        }
-
-        if (nearestPos && gameObject) {
-            // Remove this object from any previous position
-            Object.keys(this.positionObjects).forEach(key => {
-                if (this.positionObjects[key] === gameObject.objectId) {
-                    delete this.positionObjects[key];
-                    this.snapPositions[key].isOccupied = false;
-                }
-            });
-
-            // Track this object at the new position
-            this.positionObjects[nearestIndex] = gameObject.objectId;
-            nearestPos.isOccupied = true;
-
-            // Debug log for snap positions
-            if (nearestIndex >= 0 && nearestIndex <= 1) {
-                console.log(`[SNAP] Object ${gameObject.objectId} snapped to snapPosition[${nearestIndex}] at border1`);
-            } else if (nearestIndex >= 2 && nearestIndex <= 3) {
-                console.log(`[SNAP] Object ${gameObject.objectId} snapped to snapPosition[${nearestIndex}] at border2`);
-            } else if (nearestIndex >= 4 && nearestIndex <= 5) {
-                console.log(`[SNAP] Object ${gameObject.objectId} snapped to snapPosition[${nearestIndex}] at border3`);
-            }
-        }
-
-        return { snapPos: nearestPos, index: nearestIndex };
+        this.isHit = true;
+        this.arrowSpeed = 0;
+        this.checkHitSuccess();
     }
 
-    checkIfAllOccupied() {
-        // Check if all 6 positions (3 borders) are occupied
-        const allPositions = [0, 1, 2, 3, 4, 5];
-        const allOccupied = allPositions.every(i => this.positionObjects.hasOwnProperty(i));
+    checkHitSuccess() {
+        const currentBarIndex = this.successfulHits; // 0, 1, or 2
+        const range = this.hitRanges[currentBarIndex];
+        const arrowX = this.arrow.x;
 
-        if (allOccupied) {
-            console.log('[CHECK] All positions occupied (all 3 borders)!');
-            console.log('[CHECK] Current positions:', this.positionObjects);
-            console.log('[CHECK] Click confirm button to check answer');
-        }
-    }
+        console.log(`Arrow at x=${arrowX}, Range: ${range.min}-${range.max}`);
 
-    enableGameInteraction(enable) {
-        this.objects.forEach((obj, index) => {
-            obj.setVisible(enable);
-            obj.setInteractive(enable);
-            if (enable) {
-                console.log(`[INTERACTION] Object ${obj.objectId} at (${Math.round(obj.x)}, ${Math.round(obj.y)}) - visible: ${obj.visible}, interactive: ${obj.input ? obj.input.enabled : 'no input'}`);
-            }
-        });
-        if (this.confirmBtn) {
-            this.confirmBtn.setVisible(enable);
-            console.log(`[INTERACTION] Confirm button visibility: ${enable}`);
-        }
-    }
-
-    checkAnswer() {
-        console.log('[ANSWER] Checking answer...');
-
-        // Check border 1 positions (0-1)
-        const border1Positions = [0, 1];
-        const border1Objects = border1Positions.map(i => this.positionObjects[i]).filter(id => id !== undefined);
-
-        // Check border 2 positions (2-3)
-        const border2Positions = [2, 3];
-        const border2Objects = border2Positions.map(i => this.positionObjects[i]).filter(id => id !== undefined);
-
-        // Check border 3 positions (4-5)
-        const border3Positions = [4, 5];
-        const border3Objects = border3Positions.map(i => this.positionObjects[i]).filter(id => id !== undefined);
-
-        // Check if border 1 has all correct objects
-        const border1Correct = this.border1_correctObjects.every(objId => border1Objects.includes(objId)) &&
-            border1Objects.length === this.border1_correctObjects.length;
-
-        // Check if border 2 has all correct objects
-        const border2Correct = this.border2_correctObjects.every(objId => border2Objects.includes(objId)) &&
-            border2Objects.length === this.border2_correctObjects.length;
-
-        // Check if border 3 has all correct objects
-        const border3Correct = this.border3_correctObjects.every(objId => border3Objects.includes(objId)) &&
-            border3Objects.length === this.border3_correctObjects.length;
-
-        if (border1Correct && border2Correct && border3Correct) {
-            console.log('[ANSWER] ✓ All objects correctly placed in all borders!');
+        // Check if arrow is within the success range
+        if (arrowX >= range.min && arrowX <= range.max) {
             this.onRoundWin();
         } else {
-            console.log('[ANSWER] ✗ Incorrect placement!');
-            this.handleLose();
+            console.log('Hit failed - outside range');
+            // Update roundIndex to current attempt so correct UI element is marked as failed
+            this.roundIndex = this.successfulHits;
+            this.time.delayedCall(500, () => {
+                this.handleLose();
+            });
         }
     }
 
-    handleLose() {
-        // Prevent multiple entries
-        if (this.gameState === 'gameLose') return;
+    /**
+     * Override: Called when a round/game is won
+     */
+    onRoundWin() {
+        if (!this.isGameActive || this.gameState === 'gameWin') return;
 
-        this.currentFailCount = (this.currentFailCount || 0) + 1; // Increment fail count
+        // Increment successful hits
+        this.successfulHits++;
+        console.log(`Hit ${this.successfulHits}/3 successful!`);
 
-        // Standard Logic
-        this.isGameActive = false;
-        this.gameState = 'lose';
+        // Sync roundIndex with successfulHits for proper round UI update
+        this.roundIndex = this.successfulHits - 1;
 
-        this.label = this.add.image(1650, 350, 'game_fail_label').setDepth(555);
+        // Determine if this is the last round (3rd successful hit)
+        let isGameWin = (this.successfulHits >= this.targetRounds);
+        console.log('遊戲狀態改為:', isGameWin ? 'gameWin' : 'roundWin');
+
+        this.gameState = isGameWin ? 'gameWin' : 'roundWin';
+
         if (this.gameTimer) this.gameTimer.stop();
+
+        if (this.gameTimer && typeof this.gameTimer.getRemaining === 'function') {
+            if (this.isContinuousTimer) {
+                if (isGameWin) {
+                    this.totalUsedSeconds = Math.max(0, this.roundPerSeconds - this.gameTimer.getRemaining());
+                }
+            } else {
+                const used = Math.max(0, this.roundPerSeconds - this.gameTimer.getRemaining());
+                this.totalUsedSeconds += used;
+            }
+        }
+
         this.enableGameInteraction(false);
-        this.updateRoundUI(false);
-        this.showBubble('tryagain');
+        this.updateRoundUI(true);
 
+        // Show feedback and bubble
+        if (isGameWin) {
 
+            this.label = this.add.image(1650, 350, 'game_success_label').setDepth(555);
+            this.showBubble('win', this.playerGender);
+        } else {
+
+            this.showBubble('noBubble', this.playerGender);
+        }
+    }
+
+    /**
+     * Override: Called when win bubble is closed - moves to next bar or ends game
+     */
+    onWinBubbleClose() {
+        if (!this.isGameActive) return;
+
+        if (this.gameState === 'roundWin') {
+            // For round win, move to next bar instead of nextRound()
+            this.time.delayedCall(500, () => {
+                this.nextBar();
+            });
+
+        } else if (this.gameState === 'gameWin') {
+            // Save game result
+            if (this.sceneIndex > 0) {
+                GameManager.saveGameResult(this.sceneIndex, true, this.totalUsedSeconds);
+                console.log(`遊戲 ${this.sceneIndex} 結束，總用時: ${this.totalUsedSeconds} 秒`);
+            }
+            this.showWin();
+            this.isGameActive = false;
+            this.gameState = 'completed';
+        }
+    }
+
+    nextBar() {
+        // Reset for next round
+        this.isHit = false;
+        this.arrow.x = this.centerX;
+        this.arrowSpeed = 10;
+
+        // Update bar image for next question
+        const barKeys = ['game4_q1_bar', 'game4_q2_bar', 'game4_q3_bar'];
+        this.bar.setTexture(barKeys[this.successfulHits]);
+
+        console.log(`Moving to bar ${this.successfulHits + 1}`);
+
+        // Clear feedback label
+        if (this.feedbackLabel) {
+            this.feedbackLabel.destroy();
+            this.feedbackLabel = null;
+        }
+
+        // Re-enable interaction and continue playing
+        this.gameState = 'playing';
+        this.isGameActive = true;
+        this.enableGameInteraction(true);
+
+        // Resume timer if continuous
+        if (this.gameTimer && this.isContinuousTimer) {
+            this.gameTimer.start();
+        }
     }
 
     resetForNewRound() {
-        // Reset position tracking
-        this.positionObjects = {};
-        this.snapPositions.forEach(pos => pos.isOccupied = false);
+        // Reset game state
+        this.isHit = false;
+        this.successfulHits = 0;
+        this.arrowSpeed = 10;
 
-        // Reset objects to original positions
-        this.objects.forEach(obj => {
-            obj.x = obj.originalX;
-            obj.y = obj.originalY;
-        });
+        if (this.arrow) {
+            this.arrow.x = this.centerX;
+        }
+
+        if (this.bar) {
+            this.bar.setTexture('game4_q1_bar');
+        }
+    }
+
+    enableGameInteraction(enabled) {
+        if (this.hitButton) {
+            if (enabled) {
+                this.hitButton.setInteractive();
+            } else {
+                this.hitButton.disableInteractive();
+            }
+        }
+        this.allowToStart = enabled;
     }
 
     showWin() {
-        this.objects.forEach(obj => obj.setVisible(false));
-        if (this.confirmBtn) this.confirmBtn.setVisible(false);
-
         this.showObjectPanel();
     }
 
@@ -304,17 +261,4 @@ export class GameScene_4 extends BaseGameScene {
     }
 
 
-    drawDebug() {
-
-        // Debug graphics - draw snap positions
-        this.debugGraphics = this.add.graphics();
-        this.debugGraphics.lineStyle(2, 0xff0000, 0.5);
-        this.debugGraphics.fillStyle(0xff0000, 0.2);
-        this.snapPositions.forEach(pos => {
-            this.debugGraphics.strokeCircle(pos.x, pos.y, 80); // Draw outer circle
-            this.debugGraphics.fillCircle(pos.x, pos.y, 5); // Draw center point
-        });
-        this.debugGraphics.setDepth(999); // Just below borders
-
-    }
 }

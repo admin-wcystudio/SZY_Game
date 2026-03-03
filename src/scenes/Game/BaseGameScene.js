@@ -120,8 +120,6 @@ export default class BaseGameScene extends Phaser.Scene {
             'lock': `${prefix}_npc_box_lock`
         };
 
-        console.log(`[Bubble] Showing bubble of type "${type}"`);
-
         let targetKey = bubbleMapping[type];
 
         // Check for gender-specific or round-specific win bubble
