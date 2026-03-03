@@ -156,9 +156,9 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(this.centerX + 550, this.centerY + 400, 500, 210, debugVisible, true);
 
         // Interior walls
-        this.createWall(800, 450, 300, 190, debugVisible, true);
+        this.createWall(800, 450, 290, 190, debugVisible, true);
         this.createWall(this.centerX - 520, this.centerY + 130, 280, 250, debugVisible, true);
-        this.createWall(this.centerX - 430, this.centerY + 80, 440, 200, debugVisible, true);
+        this.createWall(this.centerX - 430, this.centerY + 100, 400, 160, debugVisible, true);
         this.createWall(this.centerX - 150, this.centerY + 330, 320, 150, debugVisible, true);
         this.createWall(1000, 680, 320, 80, debugVisible, true);
 
@@ -171,22 +171,22 @@ export class GameScene_2 extends BaseGameScene {
         // Left side vertical grass path
         this.createWall(0, 520, 150, 980, debugVisible, true);
         // Bottom-left grass
-        this.createWall(200, 800, 100, 500, debugVisible, true);
+        this.createWall(200, 800, 80, 500, debugVisible, true);
         this.createWall(120, 850, 100, 100, debugVisible, true);
         this.createWall(1120, 850, 120, 120, debugVisible, true);
         this.createWall(1820, 750, 150, 120, debugVisible, true);
 
-        this.createWall(1850, 350, 100, 980, debugVisible, true);
+        this.createWall(1870, 350, 100, 980, debugVisible, true);
 
 
         this.createWall(400, 320, 150, 100, debugVisible, true);
 
         this.createWall(1650, 320, 280, 200, debugVisible, true);
-        this.createWall(420, 420, 280, 100, debugVisible, true);
+        this.createWall(450, 420, 280, 100, debugVisible, true);
 
         this.createWall(900, 560, 140, 180, debugVisible, true);
         this.createWall(1350, 600, 180, 340, debugVisible, true);
-        this.createWall(1620, 660, 240, 350, debugVisible, true);
+        this.createWall(1620, 690, 240, 350, debugVisible, true);
 
 
 
@@ -318,15 +318,17 @@ export class GameScene_2 extends BaseGameScene {
 
     /** Place coins at fixed pixel positions (hazards - avoid these!) */
     placeCoins() {
-        // Define coin positions using pixel coordinates
+        // Define coin positions in walkable areas only
         const coinPositions = [
-            { x: 300, y: 400 },
-            { x: 500, y: 300 },
-            { x: 700, y: 500 },
-            { x: 900, y: 350 },
-            { x: 1100, y: 450 },
-            { x: 600, y: 600 },
-            { x: 800, y: 250 },
+            { x: 250, y: 330 },
+            { x: 100, y: 500 },
+            { x: 600, y: 350 },
+            { x: 750, y: 600 },
+            { x: 850, y: 280 },
+            { x: 1200, y: 380 },
+            { x: 1200, y: 580 },
+            { x: 1450, y: 450 },
+            { x: 1780, y: 650 },
         ];
 
         coinPositions.forEach(pos => {
@@ -338,13 +340,17 @@ export class GameScene_2 extends BaseGameScene {
 
     /** Place pens at fixed pixel positions (collectibles - grab these!) */
     placePens() {
-        // Define pen positions using pixel coordinates
+        // Define pen positions in walkable areas only
         const penPositions = [
-            { x: 400, y: 500 },
-            { x: 1000, y: 300 },
-            { x: 750, y: 400 },
-            { x: 550, y: 700 },
-            { x: 1200, y: 550 },
+            { x: 100, y: 700 },
+            { x: 280, y: 420 },   // Upper-left corridor
+            { x: 600, y: 500 },   // Center path
+            { x: 750, y: 300 },
+            { x: 1000, y: 300 }, // Upper middle
+            { x: 1200, y: 700 },  // Lower-right path
+            { x: 1450, y: 350 },
+            { x: 1450, y: 650 },
+            { x: 1780, y: 450 },// Far right upper
         ];
 
         penPositions.forEach(pos => {
