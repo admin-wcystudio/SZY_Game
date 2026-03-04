@@ -25,7 +25,7 @@ export class GameScene_1 extends BaseGameScene {
 
         this.load.image('game1_npc_box_tryagain', `${path}game1_npc_box7.png`);
 
-        this.gender = 'M';
+        this.gender = 'F';
         if (localStorage.getItem('player')) {
             this.gender = JSON.parse(localStorage.getItem('player')).gender;
         }
@@ -47,19 +47,18 @@ export class GameScene_1 extends BaseGameScene {
                 'game1_boy_success.png', { frameWidth: 340, frameHeight: 500 });
         } else {
             this.load.spritesheet('girl_fail', path +
-                'game1_girl_fail.png', { frameWidth: 623, frameHeight: 272 });
+                'game1_girl_fail.png', { frameWidth: 170, frameHeight: 250 });
 
             this.load.spritesheet('girl_left', path +
-                'game1_girl_left.png', { frameWidth: 623, frameHeight: 272 });
-
+                'game1_girl_left.png', { frameWidth: 170, frameHeight: 250 });
             this.load.spritesheet('girl_middle', path +
-                'game1_girl_middle.png', { frameWidth: 623, frameHeight: 272 });
+                'game1_girl_middle.png', { frameWidth: 170, frameHeight: 250 });
 
             this.load.spritesheet('girl_right', path +
-                'game1_girl_right.png', { frameWidth: 623, frameHeight: 272 });
+                'game1_girl_right.png', { frameWidth: 170, frameHeight: 250 });
 
             this.load.spritesheet('girl_success', path +
-                'game1_girl_success.png', { frameWidth: 623, frameHeight: 272 });
+                'game1_girl_success.png', { frameWidth: 170, frameHeight: 250 });
         }
 
     }
@@ -68,8 +67,8 @@ export class GameScene_1 extends BaseGameScene {
         this.createAnimations();
 
         this.initGame('game1_bg', 'game1_description', false, false, {
-            targetRounds: 1,
-            roundPerSeconds: 6000,
+            targetRounds: 3,
+            roundPerSeconds: 60,
             isAllowRoundFail: false,
             isContinuousTimer: true,
             sceneIndex: 1
@@ -100,6 +99,10 @@ export class GameScene_1 extends BaseGameScene {
 
         this.player = this.add.sprite(this.centerX, 1000, `${this.genderKey}_middle`)
             .setOrigin(0.5, 1).setDepth(2);
+
+        if (this.genderKey === 'girl') {
+            this.player.setScale(2); // Adjust scale for
+        }
         this.player.anims.play(`${this.genderKey}_middle_anim`, true);
 
         this.playerBasket = this.add.zone(this.player.x, this.player.y - 150, 180, 80);
@@ -124,14 +127,12 @@ export class GameScene_1 extends BaseGameScene {
 
         this.successCount = 0;
 
-        this.itemKeys = [
+        this.failItemKeys = [
             'game1_failobject1',
             'game1_failobject2',
             'game1_failobject3',
-            'game1_failobject4',
-            'game1_successobject'
+            'game1_failobject4'
         ];
-        Phaser.Utils.Array.Shuffle(this.itemKeys);
 
         this.fallingItemsGroup = this.physics.add.group();
         this.fallingItems = [];
@@ -185,6 +186,7 @@ export class GameScene_1 extends BaseGameScene {
 
         // Reset spawn timer
         this.lastSpawnTime = null;
+        this.lastSuccessSpawnTime = null;
         this.canSpawn = false;
 
         // Reset player position to center
@@ -232,20 +234,27 @@ export class GameScene_1 extends BaseGameScene {
                 this.playerBasket.body.y = this.playerBasket.y - this.playerBasket.height / 2;
             }
 
-            // Redraw the visual box
-            this.basketGfx.clear();
-            this.basketGfx.lineStyle(2, 0x00ff00, 1); // Green border
-            this.basketGfx.strokeRect(
-                this.playerBasket.x - 75, // Center it (150 width / 2)
-                this.playerBasket.y - 25, // Center it (50 height / 2)
-                this.playerBasket.width,
-                this.playerBasket.height
-            );
-            // Spawn new item every 800ms (or adjust as needed)
+            // // Redraw the visual box
+            // this.basketGfx.clear();
+            // this.basketGfx.lineStyle(2, 0x00ff00, 1); // Green border
+            // this.basketGfx.strokeRect(
+            //     this.playerBasket.x - 75, // Center it (150 width / 2)
+            //     this.playerBasket.y - 25, // Center it (50 height / 2)
+            //     this.playerBasket.width,
+            //     this.playerBasket.height
+            // );
+            // Spawn new fail item every 800ms
             if (!this.lastSpawnTime) this.lastSpawnTime = this.time.now;
             if (this.time.now - this.lastSpawnTime > 800) {
-                this.spawnRandomItem();
+                this.spawnRandomFailItem();
                 this.lastSpawnTime = this.time.now;
+            }
+
+            // Spawn success item on a separate timer (e.g., every 3-5 seconds)
+            if (!this.lastSuccessSpawnTime) this.lastSuccessSpawnTime = this.time.now;
+            if (this.time.now - this.lastSuccessSpawnTime > Phaser.Math.Between(1000, 2000)) {
+                this.spawnSuccessItem();
+                this.lastSuccessSpawnTime = this.time.now;
             }
 
             // Make all falling items fall
@@ -315,17 +324,31 @@ export class GameScene_1 extends BaseGameScene {
         objectPanel.setCloseCallBack(() => GameManager.backToMainStreet(this));
     }
 
-    spawnRandomItem() {
-        // Pick a random item key from the shuffled array
-        const key = Phaser.Utils.Array.GetRandom(this.itemKeys);
+    spawnRandomFailItem() {
+        // Pick a random fail item key
+        const key = Phaser.Utils.Array.GetRandom(this.failItemKeys);
         // Spawn at random x, always y = minY
         const x = Phaser.Math.Between(this.minX, this.maxX);
-
 
         const y = this.minY;
         // Create the sprite
         const item = this.physics.add.sprite(x, y, key).setOrigin(0.5, 0.5).setDepth(2);
-        item.isSuccessObject = (key === 'game1_successobject');
+        item.isSuccessObject = false;
+
+        item.setActive(true).setVisible(true);
+        this.fallingItemsGroup.add(item);
+        this.fallingItems.push(item);
+    }
+
+    spawnSuccessItem() {
+        const key = 'game1_successobject';
+        // Spawn at random x, always y = minY
+        const x = Phaser.Math.Between(this.minX, this.maxX);
+
+        const y = this.minY;
+        // Create the sprite
+        const item = this.physics.add.sprite(x, y, key).setOrigin(0.5, 0.5).setDepth(2);
+        item.isSuccessObject = true;
 
         item.setActive(true).setVisible(true);
         this.fallingItemsGroup.add(item);

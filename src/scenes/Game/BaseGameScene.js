@@ -74,7 +74,15 @@ export default class BaseGameScene extends Phaser.Scene {
         this.roundIndex = 0;
         this.totalUsedSeconds = 0;
 
-        const player = JSON.parse(localStorage.getItem('player') || '{"gender":"M"}');
+        let player = { gender: 'F' }; // Default to Female
+        try {
+            const stored = localStorage.getItem('player');
+            if (stored) {
+                player = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error("Error parsing player data", e);
+        }
         this.playerGender = player.gender; // Store gender for use in win bubbles
         const descriptionPages = this._formatDescription(descriptionKey);
 
@@ -83,7 +91,7 @@ export default class BaseGameScene extends Phaser.Scene {
 
         this.gameUI.descriptionPanel.show();
 
-        console.log('Game UI Initialized');
+        console.log('Game UI Initialized , Gender:', this.playerGender);
 
         this._setupTimer();
         this.setupGameObjects();

@@ -1,5 +1,4 @@
 import { CustomButton, CustomButton2 } from './Button.js';
-
 /**
  * BASE PANEL CLASS
  * Provides common functionality for all game overlays
@@ -300,7 +299,7 @@ export class ItemsPanel extends Phaser.GameObjects.Container {
                     if (pages.length > 0) {
                         const blocker = scene.add.rectangle(0, 0, 1920, 1080, 0x000000, 0.5).setInteractive().setScrollFactor(0);
 
-                        const descPanel = new CustomDescriptionPanel(scene, 0, 0, pages, () => {
+                        const descPanel = new CustomPanel(scene, 0, 0, pages, () => {
                             blocker.destroy();
                             this.activeDescPanel = null;
                             this.activeBlocker = null;

@@ -415,6 +415,13 @@ export class MainStreetScene extends Phaser.Scene {
         }
     }
 
+    switchTalkingAnimation(gender) {
+        let isLeft = this.playerSprite.lastDirectionLeft;
+        let talkKey = isLeft ? `${gender}_left_talk_anim` : `${gender}_right_talk_anim`;
+        this.playerSprite.play(talkKey, true);
+        this.playerSprite.setFlipX(false); // talking animations seem to have dedicated left/right sprites
+    }
+
 
     loadBubble(index = 0, bubbles, sceneKey, targetNpc, characterbubble) {
 
@@ -471,6 +478,8 @@ export class MainStreetScene extends Phaser.Scene {
                 if (!targetNpc.canInteract) return;
 
                 this.characterBubbleImg.setVisible(true);
+                this.switchTalkingAnimation(this.genderKey);
+
                 this.characterBubbleImg.on('pointerdown', () => {
                     this.characterBubbleImg.destroy();
                     this.characterActiveBubble = null;
@@ -651,14 +660,14 @@ export class MainStreetScene extends Phaser.Scene {
 
         this.anims.create({
             key: 'girl_left_talk_anim',
-            frames: this.anims.generateFrameNumbers('girl_left_talk', { start: 0, end: 168 }),
+            frames: this.anims.generateFrameNumbers('girl_left_talk', { start: 0, end: 23 }),
             frameRate: 24,
             repeat: -1
         });
 
         this.anims.create({
             key: 'girl_right_talk_anim',
-            frames: this.anims.generateFrameNumbers('girl_right_talk', { start: 0, end: 168 }),
+            frames: this.anims.generateFrameNumbers('girl_right_talk', { start: 0, end: 49 }),
             frameRate: 24,
             repeat: -1
         });
