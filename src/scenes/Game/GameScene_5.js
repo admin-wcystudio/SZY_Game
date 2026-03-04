@@ -56,9 +56,11 @@ export class GameScene_5 extends BaseGameScene {
     }
 
     create() {
-        // Get player gender from localStorage
-        const player = JSON.parse(localStorage.getItem('player') || '{"gender":"M"}');
-        this.genderKey = player.gender === 'M' ? 'boy' : 'girl';
+        const gender = localStorage.getItem('player') ? JSON.parse(localStorage.getItem('player')).gender : 'F';
+
+        this.genderKey = gender === 'M' ? 'boy' : 'girl';
+        const genderKey = this.genderKey;
+
 
         // Create and play background video based on gender
         this.bgVideo = this.add.video(960, 540, `${this.genderKey}_bg1`)
@@ -122,6 +124,13 @@ export class GameScene_5 extends BaseGameScene {
         if (this.questionPanel) {
             this.questionPanel.destroy();
         }
+
+        this.bgVideo.destroy();
+        this.bgVideo = this.add.video(960, 540, `${this.genderKey}_bg1`)
+            .setDepth(-1)
+            .setOrigin(0.5, 0.5);
+        this.bgVideo.play(true);
+
         this.setupGameObjects(); // 重新抽題並建立 Panel
         this.questionPanel.setVisible(true);
     }

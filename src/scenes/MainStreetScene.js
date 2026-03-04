@@ -194,7 +194,8 @@ export class MainStreetScene extends Phaser.Scene {
         this.genderKey = gender === 'M' ? 'boy' : 'girl';
         const genderKey = this.genderKey;
 
-        const playerPos = localStorage.getItem('playerPosition') ? JSON.parse(localStorage.getItem('playerPosition')) : { x: 800, y: 550 };
+        const playerPos = localStorage.getItem('playerPosition')
+            ? JSON.parse(localStorage.getItem('playerPosition')) : { x: 600, y: 600 };
         this.playerPos = playerPos;
 
 
@@ -224,15 +225,15 @@ export class MainStreetScene extends Phaser.Scene {
         const ui = UIHelper.createGameCommonUI(this, null, introPage, 0);
 
         // Check if intro has been seen in this session
-        // const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
-        // if (hasSeenIntro) {
-        //     if (ui && ui.descriptionPanel) {
-        //         ui.descriptionPanel.setVisible(false);
-        //     }
-        // } else {
-        //     sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
-        // }
-        //
+        const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
+        if (hasSeenIntro) {
+            if (ui && ui.descriptionPanel) {
+                ui.descriptionPanel.setVisible(false);
+            }
+        } else {
+            sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
+        }
+
         //buttons
         this.isLeftDown = false;
         this.isRightDown = false;
@@ -309,7 +310,7 @@ export class MainStreetScene extends Phaser.Scene {
         });
 
 
-        this.playerSprite = this.add.sprite(600, 600,
+        this.playerSprite = this.add.sprite(playerPos.x, playerPos.y,
             `${genderKey}_idle`).setDepth(14).setScale(2);
 
         this.playerSprite.anims.play(`${genderKey}_idle_anim`);
@@ -485,7 +486,7 @@ export class MainStreetScene extends Phaser.Scene {
                     this.characterActiveBubble = null;
 
                     const timer2 = this.time.delayedCall(1000, () => {
-                        if (sceneKey && targetNpc.canInteract) {
+                        if (sceneKey) {
                             localStorage.setItem('playerPosition', JSON.stringify({ x: this.playerSprite.x, y: this.playerSprite.y }));
                             GameManager.switchToGameScene(this, sceneKey);
                         }
@@ -518,98 +519,98 @@ export class MainStreetScene extends Phaser.Scene {
         this.anims.create({
             key: 'npc1_anim',
             frames: this.anims.generateFrameNumbers('npc1', { start: 0, end: 70 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc1_glow_anim',
             frames: this.anims.generateFrameNumbers('npc1_glow', { start: 0, end: 70 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc2_anim',
             frames: this.anims.generateFrameNumbers('npc2', { start: 0, end: 68 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc2_glow_anim',
             frames: this.anims.generateFrameNumbers('npc2_glow', { start: 0, end: 68 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc3_anim',
             frames: this.anims.generateFrameNumbers('npc3', { start: 0, end: 75 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc3_glow_anim',
             frames: this.anims.generateFrameNumbers('npc3_glow', { start: 0, end: 75 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc4_anim',
             frames: this.anims.generateFrameNumbers('npc4', { start: 0, end: 94 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc4_glow_anim',
             frames: this.anims.generateFrameNumbers('npc4_glow', { start: 0, end: 94 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc5_anim',
             frames: this.anims.generateFrameNumbers('npc5', { start: 0, end: 80 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc5_glow_anim',
             frames: this.anims.generateFrameNumbers('npc5_glow', { start: 0, end: 80 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc6_anim',
             frames: this.anims.generateFrameNumbers('npc6', { start: 0, end: 94 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc6_glow_anim',
             frames: this.anims.generateFrameNumbers('npc6_glow', { start: 0, end: 94 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc7_anim',
             frames: this.anims.generateFrameNumbers('npc7', { start: 0, end: 94 }),
-            frameRate: 30,
+            frameRate: 20,
             repeat: -1
         });
 
         this.anims.create({
             key: 'npc7_glow_anim',
             frames: this.anims.generateFrameNumbers('npc7_glow', { start: 0, end: 94 }),
-            frameRate: 30,
+            frameRate: 0,
             repeat: -1
         });
 
