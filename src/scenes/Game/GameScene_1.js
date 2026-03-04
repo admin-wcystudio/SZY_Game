@@ -168,6 +168,9 @@ export class GameScene_1 extends BaseGameScene {
             this.leftBtn.disableInteractive();
             this.rightBtn.disableInteractive();
         }
+        this.fallingItems.forEach(item => {
+            item.setActive(enabled).setVisible(enabled);
+        });
     }
 
     resetForNewRound() {
@@ -357,7 +360,7 @@ export class GameScene_1 extends BaseGameScene {
 
 
     handleItemCollection(item) {
-        if (!this.isGameActive) return;
+        if (!this.isGameActive || this.gameState === 'gameWin') return;
 
         if (item.isSuccessObject) {
             item.destroy();

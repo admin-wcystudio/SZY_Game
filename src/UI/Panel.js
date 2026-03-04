@@ -294,18 +294,19 @@ export class ItemsPanel extends Phaser.GameObjects.Container {
                         item.itemDescriptionKey,
                         item.itemDescriptionKey1,
                         item.itemDescriptionKey2
-                    ].filter(key => key != null);
+                    ].filter(key => key != null).map(key => ({ content: key }));
 
                     if (pages.length > 0) {
                         const blocker = scene.add.rectangle(0, 0, 1920, 1080, 0x000000, 0.5).setInteractive().setScrollFactor(0);
 
-                        const descPanel = new CustomPanel(scene, 0, 0, pages, () => {
+                        const descPanel = new CustomPanel(scene, 0, 0, pages);
+                        descPanel.setCloseCallBack(() => {
                             blocker.destroy();
                             this.activeDescPanel = null;
                             this.activeBlocker = null;
                         });
 
-                        descPanel.setDepth(501).setScrollFactor(0);
+                        descPanel.setDepth(501).setScrollFactor(0).show();
                         blocker.setDepth(500).setScrollFactor(0);
 
                         this.add([blocker, descPanel]);
