@@ -103,7 +103,7 @@ export class LoginScene extends Phaser.Scene {
         const height = 50;
 
 
-        this.nameInput = this.add.rexInputText(1080, 190, width, height, {
+        this.nameInput = this.add.rexInputText(1080, 200, width, height, {
             type: 'text',
             placeholder: '_',
             fontSize: '48px',
@@ -111,7 +111,7 @@ export class LoginScene extends Phaser.Scene {
             fontFamily: 'Arial',
             fontWeight: 'bold',
             backgroundColor: 'transparent'
-        }).setDepth(20);
+        }).setDepth(20).setVisible(true);
 
         this.nameInput.on('textchange', (inputText) => {
             console.log("現在的名字是:", inputText.text);
