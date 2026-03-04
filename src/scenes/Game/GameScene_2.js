@@ -83,7 +83,7 @@ export class GameScene_2 extends BaseGameScene {
         this.createAnimations();
 
         // Movement settings
-        this.moveStep = 80;  // Pixels per move
+        this.moveStep = 60;  // Pixels per move
         this.isMoving = false;
 
         // Player start position
@@ -141,51 +141,54 @@ export class GameScene_2 extends BaseGameScene {
         this.placePens();
         this.createWallColliders();
 
+        // Debug: visualize player collision box (set to false to hide)
+        this.debugCollider = true;
+        this.debugGraphics = this.add.graphics().setDepth(999);
+
     }
 
     createWallColliders() {
-        this.walls = this.physics.add.staticGroup();
         this.wallRects = [];
 
-        const debugVisible = true;
+        const debugVisible = false;
         // Outer boundary walls
         this.createWall(this.centerX, 160, 2300, 210, debugVisible, true);
         this.createWall(this.centerX + 480, 250, 800, 150, debugVisible, true);
-        this.createWall(this.centerX, this.centerY + 480, 2300, 210, debugVisible, true);
+        this.createWall(this.centerX, this.centerY + 450, 2300, 230, debugVisible, true);
         this.createWall(this.centerX + 550, this.centerY + 430, 500, 210, debugVisible, true);
 
         // Interior walls
         this.createWall(800, 450, 290, 190, debugVisible, true);
         this.createWall(this.centerX - 520, this.centerY + 130, 280, 250, debugVisible, true);
-        this.createWall(this.centerX - 430, this.centerY + 100, 400, 160, debugVisible, true);
+        this.createWall(this.centerX - 430, this.centerY + 90, 400, 140, debugVisible, true);
         this.createWall(this.centerX - 150, this.centerY + 330, 320, 150, debugVisible, true);
-        this.createWall(1000, 680, 320, 80, debugVisible, true);
+        this.createWall(1000, 680, 320, 60, debugVisible, true);
         this.createWall(1050, 500, 750, 100, debugVisible, true);
         // Top-left / right grass/tree area
         this.createWall(100, 350, 250, 180, debugVisible, true);
         // Left side vertical grass path
         this.createWall(0, 520, 150, 980, debugVisible, true);
         // Bottom-left grass
-        this.createWall(200, 800, 80, 500, debugVisible, true);
+        this.createWall(200, 800, 50, 500, debugVisible, true);
         this.createWall(120, 850, 100, 100, debugVisible, true);
         this.createWall(400, 320, 150, 100, debugVisible, true);
         this.createWall(450, 420, 280, 100, debugVisible, true);
 
         this.createWall(1120, 850, 120, 120, debugVisible, true);
-        this.createWall(1820, 750, 150, 120, debugVisible, true);
+        this.createWall(1820, 780, 150, 120, debugVisible, true);
         this.createWall(1870, 350, 100, 980, debugVisible, true);
         this.createWall(900, 560, 140, 180, debugVisible, true);
         this.createWall(1350, 600, 150, 330, debugVisible, true);
         this.createWall(1620, 690, 240, 350, debugVisible, true);
         this.createWall(1650, 320, 280, 200, debugVisible, true);
 
-        console.log(`[GameScene_2] Created ${this.walls.getChildren().length} wall colliders`);
     }
     createWall(x, y, width, height, visible = false, confirmed = false) {
-        const color = confirmed ? 0x00ff00 : 0xff0000; // Green if confirmed, red if not
-        const wall = this.add.rectangle(x, y, width, height, color, 0.0).setDepth(500);
-        this.physics.add.existing(wall, true);
-        this.walls.add(wall);
+        // Only create a visible rectangle in debug mode — rendering 22+ overlays every frame is expensive
+        if (visible) {
+            const color = confirmed ? 0x00ff00 : 0xff0000;
+            this.add.rectangle(x, y, width, height, color, 0.3).setDepth(500);
+        }
 
         this.wallRects.push({
             x: x - width / 2,
@@ -193,8 +196,6 @@ export class GameScene_2 extends BaseGameScene {
             width: width,
             height: height
         });
-
-        return wall;
     }
 
 
@@ -230,10 +231,8 @@ export class GameScene_2 extends BaseGameScene {
                 break;
         }
 
-        console.log(`[GameScene_2] Attempting move ${direction} to (${targetX}, ${targetY})`);
-
         // Manual intersection check against walls using points instead of Arcade physics
-        if (this.wouldCollideWithWall(targetX, targetY)) {
+        if (this.wouldCollideWithWall(targetX - 20, targetY - 30)) {
             console.log('[GameScene_2] Blocked by wall!');
             return;
         }
@@ -261,22 +260,36 @@ export class GameScene_2 extends BaseGameScene {
     }
 
     wouldCollideWithWall(x, y) {
-        // Just checking a very precise 10x10 area at the character's feet coordinates
-        const hitBBoxSize = 15;
-        const playerRect = new Phaser.Geom.Rectangle(x - hitBBoxSize / 2, y + 40, hitBBoxSize, hitBBoxSize);
+        const hitBBoxSize = 20;
+        // Offset down to the character's feet (sprite is 105px * scale 2 = 210px tall, feet ~90px below center)
+        const feetY = y + 90;
+        const playerRect = new Phaser.Geom.Rectangle(x - hitBBoxSize / 2, feetY - hitBBoxSize / 2, hitBBoxSize, hitBBoxSize);
 
+        let colliding = false;
         for (const wall of this.wallRects) {
             const wallRect = new Phaser.Geom.Rectangle(wall.x, wall.y, wall.width, wall.height);
             if (Phaser.Geom.Intersects.RectangleToRectangle(playerRect, wallRect)) {
-                return true;
+                colliding = true;
+                break;
             }
         }
-        return false;
+
+        // if (this.debugCollider && this.debugGraphics) {
+        //     this.debugGraphics.clear();
+        //     // Red when colliding, cyan when free
+        //     this.debugGraphics.lineStyle(2, colliding ? 0xff0000 : 0x00ffff, 1);
+        //     this.debugGraphics.strokeRect(playerRect.x, playerRect.y, playerRect.width, playerRect.height);
+        //     // Show coin collection radius in yellow
+        //     this.debugGraphics.lineStyle(1, 0xffff00, 0.6);
+        //     this.debugGraphics.strokeCircle(x, y, 80);
+        // }
+
+        return colliding;
     }
 
     /** Check collision with coins using distance */
     checkCoinCollision() {
-        const hitRadius = 60;
+        const hitRadius = 80;
         for (const coin of this.coins) {
             if (!coin.visible) continue;
             const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, coin.x, coin.y);
@@ -292,7 +305,7 @@ export class GameScene_2 extends BaseGameScene {
 
     /** Check collection of pens using distance */
     checkPenCollection() {
-        const pickupRadius = 40;
+        const pickupRadius = 80;
         for (const pen of this.pens) {
             if (!pen.visible) continue;
             const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, pen.x, pen.y);
@@ -428,6 +441,9 @@ export class GameScene_2 extends BaseGameScene {
     }
 
     createAnimations() {
+        // Skip if already created (e.g. on scene restart)
+        if (this.anims.exists('boy_backstop_anim')) return;
+
         // Boy animations
         this.anims.create({
             key: 'boy_backstop_anim',
