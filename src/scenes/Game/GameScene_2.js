@@ -104,19 +104,19 @@ export class GameScene_2 extends BaseGameScene {
         });
 
         // Direction buttons
-        this.leftBtn = new CustomButton(this, 1500, 900, 'left_btn', 'left_btn_click', () => {
+        this.leftBtn = new CustomButton(this, 1500, 950, 'left_btn', 'left_btn_click', () => {
             this.moveDirection('left');
         }, () => { }).setDepth(2);
 
-        this.rightBtn = new CustomButton(this, 1800, 900, 'right_btn', 'right_btn_click', () => {
+        this.rightBtn = new CustomButton(this, 1800, 950, 'right_btn', 'right_btn_click', () => {
             this.moveDirection('right');
         }, () => { }).setDepth(2);
 
-        this.upBtn = new CustomButton(this, 1650, 750, 'up_btn', 'up_btn_click', () => {
+        this.upBtn = new CustomButton(this, 1650, 800, 'up_btn', 'up_btn_click', () => {
             this.moveDirection('up');
         }, () => { }).setDepth(2);
 
-        this.downBtn = new CustomButton(this, 1650, 900, 'down_btn', 'down_btn_click', () => {
+        this.downBtn = new CustomButton(this, 1650, 950, 'down_btn', 'down_btn_click', () => {
             this.moveDirection('down');
         }, () => { }).setDepth(2);
 
