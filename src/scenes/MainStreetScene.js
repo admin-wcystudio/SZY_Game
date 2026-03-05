@@ -242,7 +242,6 @@ export class MainStreetScene extends Phaser.Scene {
         this.btnLeft = new CustomButton(this, 150, height / 2, 'prev_button', 'prev_button_click',
             () => {
                 this.isLeftDown = true;
-                this.playerSprite.lastDirectionLeft = true;
                 this.handleAnimation(genderKey, true, true);
             },
             () => {
@@ -254,12 +253,11 @@ export class MainStreetScene extends Phaser.Scene {
         this.btnRight = new CustomButton(this, width - 150, height / 2, 'next_button', 'next_button_click',
             () => {
                 this.isRightDown = true;
-                this.playerSprite.lastDirectionLeft = false;
                 this.handleAnimation(genderKey, true, false);
             },
             () => {
                 this.isRightDown = false;
-                this.handleAnimation(genderKey, false, false);
+                this.handleAnimation(genderKey, false, true);
             }
         ).setScrollFactor(0).setDepth(100);
 
@@ -418,8 +416,8 @@ export class MainStreetScene extends Phaser.Scene {
         }
     }
 
-    switchTalkingAnimation(gender, isLeftOverride) {
-        let isLeft = isLeftOverride !== undefined ? isLeftOverride : this.playerSprite.lastDirectionLeft;
+    switchTalkingAnimation(gender, isLeft) {
+        if (isLeft === undefined) isLeft = this.playerSprite.lastDirectionLeft;
         let talkKey = isLeft ? `${gender}_left_talk_anim` : `${gender}_right_talk_anim`;
         this.playerSprite.play(talkKey, true);
         this.playerSprite.setFlipX(false); // talking animations seem to have dedicated left/right sprites
@@ -427,8 +425,8 @@ export class MainStreetScene extends Phaser.Scene {
 
 
     loadBubble(index = 0, bubbles, sceneKey, targetNpc, characterbubble) {
-        // Capture direction at click time before any button-release events can change it
-        const capturedIsLeft = this.playerSprite.lastDirectionLeft;
+        // Negative = player is left of NPC (facing right); Positive = player is right of NPC (facing left)
+        const facingLeft = (this.playerSprite.x - targetNpc.x) > 0;
 
         if (this.currentActiveBubble) {
             this.currentActiveBubble.destroy();
@@ -483,7 +481,7 @@ export class MainStreetScene extends Phaser.Scene {
                 if (!targetNpc.canInteract) return;
 
                 this.characterBubbleImg.setVisible(true);
-                this.switchTalkingAnimation(this.genderKey, capturedIsLeft);
+                this.switchTalkingAnimation(this.genderKey, facingLeft);
 
                 this.characterBubbleImg.on('pointerdown', () => {
                     this.characterBubbleImg.destroy();
