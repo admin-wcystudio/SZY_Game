@@ -112,7 +112,7 @@ export class MainStreetScene extends Phaser.Scene {
 
 
         // // Only load spritesheets for the selected gender
-        let gender = 'F';
+        let gender = 'M';
         try {
             if (localStorage.getItem('player')) {
                 gender = JSON.parse(localStorage.getItem('player')).gender || 'M';
@@ -123,15 +123,15 @@ export class MainStreetScene extends Phaser.Scene {
 
         if (gender === 'M') {
             this.load.spritesheet('boy_idle', 'assets/images/MainStreet/Boy/maincharacter_boy_middlestand.png',
-                { frameWidth: 600, frameHeight: 700 });
+                { frameWidth: 300, frameHeight: 350 });
             this.load.spritesheet('boy_left_talk', 'assets/images/MainStreet/Boy/maincharacter_boy_lefttalking.png',
-                { frameWidth: 600, frameHeight: 700 });
+                { frameWidth: 300, frameHeight: 350 });
             this.load.spritesheet('boy_right_talk', 'assets/images/MainStreet/Boy/maincharacter_boy_righttalking.png',
-                { frameWidth: 600, frameHeight: 700 });
+                { frameWidth: 300, frameHeight: 350 });
             this.load.spritesheet('boy_left_walk', 'assets/images/MainStreet/Boy/maincharacter_boy_leftwalk.png',
-                { frameWidth: 600, frameHeight: 700 });
+                { frameWidth: 300, frameHeight: 350 });
             this.load.spritesheet('boy_right_walk', 'assets/images/MainStreet/Boy/maincharacter_boy_rightwalk.png',
-                { frameWidth: 600, frameHeight: 700 });
+                { frameWidth: 300, frameHeight: 350 });
         }
 
         if (gender === 'F') {
@@ -189,7 +189,7 @@ export class MainStreetScene extends Phaser.Scene {
         this.centerX = width / 2;
         this.centerY = height / 2;
 
-        const gender = localStorage.getItem('player') ? JSON.parse(localStorage.getItem('player')).gender : 'F';
+        const gender = localStorage.getItem('player') ? JSON.parse(localStorage.getItem('player')).gender : 'M';
 
         this.genderKey = gender === 'M' ? 'boy' : 'girl';
         const genderKey = this.genderKey;
@@ -242,6 +242,7 @@ export class MainStreetScene extends Phaser.Scene {
         this.btnLeft = new CustomButton(this, 150, height / 2, 'prev_button', 'prev_button_click',
             () => {
                 this.isLeftDown = true;
+                this.playerSprite.lastDirectionLeft = true;
                 this.handleAnimation(genderKey, true, true);
             },
             () => {
@@ -253,11 +254,12 @@ export class MainStreetScene extends Phaser.Scene {
         this.btnRight = new CustomButton(this, width - 150, height / 2, 'next_button', 'next_button_click',
             () => {
                 this.isRightDown = true;
+                this.playerSprite.lastDirectionLeft = false;
                 this.handleAnimation(genderKey, true, false);
             },
             () => {
                 this.isRightDown = false;
-                this.handleAnimation(genderKey, false, true);
+                this.handleAnimation(genderKey, false, false);
             }
         ).setScrollFactor(0).setDepth(100);
 
@@ -416,8 +418,8 @@ export class MainStreetScene extends Phaser.Scene {
         }
     }
 
-    switchTalkingAnimation(gender) {
-        let isLeft = this.playerSprite.lastDirectionLeft;
+    switchTalkingAnimation(gender, isLeftOverride) {
+        let isLeft = isLeftOverride !== undefined ? isLeftOverride : this.playerSprite.lastDirectionLeft;
         let talkKey = isLeft ? `${gender}_left_talk_anim` : `${gender}_right_talk_anim`;
         this.playerSprite.play(talkKey, true);
         this.playerSprite.setFlipX(false); // talking animations seem to have dedicated left/right sprites
@@ -425,6 +427,8 @@ export class MainStreetScene extends Phaser.Scene {
 
 
     loadBubble(index = 0, bubbles, sceneKey, targetNpc, characterbubble) {
+        // Capture direction at click time before any button-release events can change it
+        const capturedIsLeft = this.playerSprite.lastDirectionLeft;
 
         if (this.currentActiveBubble) {
             this.currentActiveBubble.destroy();
@@ -479,7 +483,7 @@ export class MainStreetScene extends Phaser.Scene {
                 if (!targetNpc.canInteract) return;
 
                 this.characterBubbleImg.setVisible(true);
-                this.switchTalkingAnimation(this.genderKey);
+                this.switchTalkingAnimation(this.genderKey, capturedIsLeft);
 
                 this.characterBubbleImg.on('pointerdown', () => {
                     this.characterBubbleImg.destroy();
