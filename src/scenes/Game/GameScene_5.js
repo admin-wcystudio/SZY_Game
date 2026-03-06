@@ -96,14 +96,14 @@ export class GameScene_5 extends BaseGameScene {
             {
                 content: 'game5_q2',
                 options: ['game5_q2_a_button', 'game5_q2_b_button', 'game5_q2_c_button', 'game5_q2_d_button'],
-                answer: 1,
+                answer: 3,
                 nextDialog: 'game5_npc_box4',
                 characterDialog: `game5_${this.genderKey}_npc_box3`
             },
             {
                 content: 'game5_q3',
                 options: ['game5_q3_a_button', 'game5_q3_b_button', 'game5_q3_c_button', 'game5_q3_d_button'],
-                answer: 2,
+                answer: 1,
                 nextDialog: 'game5_npc_box5',
                 characterDialog: `game5_${this.genderKey}_npc_box4`
             }

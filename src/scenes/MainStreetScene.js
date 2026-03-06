@@ -223,16 +223,17 @@ export class MainStreetScene extends Phaser.Scene {
         ]
 
         const ui = UIHelper.createGameCommonUI(this, null, introPage, 0);
+        ui.descriptionPanel.setVisible(true);
 
         // Check if intro has been seen in this session
-        const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
-        if (hasSeenIntro) {
-            if (ui && ui.descriptionPanel) {
-                ui.descriptionPanel.setVisible(false);
-            }
-        } else {
-            sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
-        }
+        // const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
+        // if (hasSeenIntro) {
+        //     if (ui && ui.descriptionPanel) {
+        //         ui.descriptionPanel.setVisible(false);
+        //     }
+        // } else {
+        //     sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
+        // }
 
         //buttons
         this.isLeftDown = false;
@@ -298,10 +299,11 @@ export class MainStreetScene extends Phaser.Scene {
             this.isRightDown = false;
         });
 
+        const npcGameMap = { 1: 4, 2: 2, 3: 3, 4: 1, 5: 5, 6: 6, 7: 7 };
         this.interactiveNpcs.forEach((npc, index) => {
             npc.on('pointerdown', () => {
                 if (npc.canInteract) {
-                    const gameNumber = index + 1;
+                    const gameNumber = npcGameMap[npc.id] ?? (index + 1);
                     const sceneKey = `GameScene_${gameNumber}`;
                     const characterbubble = `game${gameNumber}_${genderKey}_bubble`;
                     this.loadBubble(0, npc.bubbles, sceneKey, npc, characterbubble);
