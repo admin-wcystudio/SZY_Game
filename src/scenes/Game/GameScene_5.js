@@ -12,10 +12,10 @@ export class GameScene_5 extends BaseGameScene {
     preload() {
 
         const path = 'assets/images/Game_5/';
-        this.load.video('boy_bg1', path + 'game5_boy_bg1.webm');
-        this.load.video('boy_bg2', path + 'game5_boy_bg2.webm');
-        this.load.video('girl_bg1', path + 'game5_girl_bg1.webm');
-        this.load.video('girl_bg2', path + 'game5_girl_bg2.webm');
+        this.load.video('boy_bg1', path + 'game5_boy_bg1.mp4');
+        this.load.video('boy_bg2', path + 'game5_boy_bg2.mp4');
+        this.load.video('girl_bg1', path + 'game5_girl_bg1.mp4');
+        this.load.video('girl_bg2', path + 'game5_girl_bg2.mp4');
 
         // NPC dialogue boxes (in ascending order)
         this.load.image('game5_npc_box1', `${path}game5_npc_box1.png`);

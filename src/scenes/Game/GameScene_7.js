@@ -23,10 +23,10 @@ export class GameScene_7 extends BaseGameScene {
             this.load.image(`game7_fill_answer${i}`, `${path}game7_fill_answer${i}.png`);
         }
 
-        this.load.video('game7_final_boybg1', `${path}game7_final_boybg1.webm`);
-        this.load.video('game7_final_boybg2', `${path}game7_final_boybg2.webm`);
-        this.load.video('game7_final_girlbg1', `${path}game7_final_girlbg1.webm`);
-        this.load.video('game7_final_girlbg2', `${path}game7_final_girlbg2.webm`);
+        this.load.video('game7_final_boybg1', `${path}game7_final_boybg1.mp4`);
+        this.load.video('game7_final_boybg2', `${path}game7_final_boybg2.mp4`);
+        this.load.video('game7_final_girlbg1', `${path}game7_final_girlbg1.mp4`);
+        this.load.video('game7_final_girlbg2', `${path}game7_final_girlbg2.mp4`);
 
         this.load.image('game7_npc_box_intro', `${path}game7_npc_box5.png`);
 

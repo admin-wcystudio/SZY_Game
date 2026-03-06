@@ -223,17 +223,17 @@ export class MainStreetScene extends Phaser.Scene {
         ]
 
         const ui = UIHelper.createGameCommonUI(this, null, introPage, 0);
-        ui.descriptionPanel.setVisible(true);
 
         // Check if intro has been seen in this session
-        // const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
-        // if (hasSeenIntro) {
-        //     if (ui && ui.descriptionPanel) {
-        //         ui.descriptionPanel.setVisible(false);
-        //     }
-        // } else {
-        //     sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
-        // }
+        const hasSeenIntro = sessionStorage.getItem('hasSeenMainStreetIntro');
+        if (hasSeenIntro) {
+            if (ui && ui.descriptionPanel) {
+                ui.descriptionPanel.setVisible(false);
+            }
+        } else {
+            ui.descriptionPanel.setVisible(true);
+            sessionStorage.setItem('hasSeenMainStreetIntro', 'true');
+        }
 
         //buttons
         this.isLeftDown = false;
