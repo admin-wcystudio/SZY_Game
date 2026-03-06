@@ -56,7 +56,7 @@ export class GameScene_5 extends BaseGameScene {
     }
 
     create() {
-        const gender = localStorage.getItem('player') ? JSON.parse(localStorage.getItem('player')).gender : 'F';
+        const gender = localStorage.getItem('player') ? JSON.parse(localStorage.getItem('player')).gender : 'M';
 
         this.genderKey = gender === 'M' ? 'boy' : 'girl';
         const genderKey = this.genderKey;
@@ -151,7 +151,7 @@ export class GameScene_5 extends BaseGameScene {
 
         // Play the fail background video
         this.bgVideo = this.add.video(960, 540, `${this.genderKey}_bg2`)
-            .setDepth(-1)
+            .setDepth(10)
             .setOrigin(0.5, 0.5);
         this.bgVideo.play(true);
 

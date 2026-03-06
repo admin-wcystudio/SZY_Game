@@ -101,7 +101,7 @@ export class MainStreetScene extends Phaser.Scene {
         this.load.image('game4_boy_bubble', 'assets/images/Game_4/game4_npc_box2.png');
 
         this.load.image('game5_girl_bubble', 'assets/images/Game_5/game5_npc_girl_box2.png');
-        this.load.image('game5_boy_bubble', 'assets/images/Game_5/game5_npc_box2.png');
+        this.load.image('game5_boy_bubble', 'assets/images/Game_5/game5_npc_boy_box4.png');
 
         this.load.image('game6_girl_bubble', 'assets/images/Game_6/game6_npc_girl_box2.png');
         this.load.image('game6_boy_bubble', 'assets/images/Game_6/game6_npc_box2.png');
@@ -299,7 +299,7 @@ export class MainStreetScene extends Phaser.Scene {
             this.isRightDown = false;
         });
 
-        const npcGameMap = { 1: 4, 2: 2, 3: 3, 4: 1, 5: 5, 6: 6, 7: 7 };
+        const npcGameMap = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 5, 6: 6, 7: 7 };
         this.interactiveNpcs.forEach((npc, index) => {
             npc.on('pointerdown', () => {
                 if (npc.canInteract) {
