@@ -39,7 +39,7 @@ export class LoginScene extends Phaser.Scene {
         this.load.spritesheet('girl_transition', loginPath + 'choosepage_girl_galaxytochinese_transition.png',
             { frameWidth: 350, frameHeight: 450 });
 
-        this.load.video('transition', loginPath + 'Transition.webm');
+        this.load.video('transition', loginPath + 'Transition.mp4');
     }
 
     create() {
