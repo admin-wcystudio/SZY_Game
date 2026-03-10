@@ -36,6 +36,9 @@ export class GameScene_4 extends BaseGameScene {
         this.arrow = this.add.image(this.centerX, this.centerY - 100, 'game4_target_arrow')
             .setDepth(501).setVisible(true);
 
+        this.barQuestion = this.add.image(this.centerX, this.centerY - 300, 'game4_q1')
+            .setDepth(501).setVisible(true);
+
         this.bar = this.add.image(this.centerX, this.centerY + 100, 'game4_q1_bar')
             .setDepth(500).setVisible(true);
 
@@ -73,9 +76,9 @@ export class GameScene_4 extends BaseGameScene {
 
         // Define success ranges for each bar (min and max x positions)
         this.hitRanges = [
-            { min: 200, max: 650 },  // Bar 1 success range
-            { min: 1250, max: 1550 },  // Bar 2 success range
-            { min: 650, max: 1050 }   // Bar 3 success range
+            { min: 400, max: 600 },  // Bar 1 success range
+            { min: 1260, max: 1550 },  // Bar 2 success range
+            { min: 650, max: 900 }   // Bar 3 success range
         ];
 
         this.hitButton = new CustomButton(this, 1720, 880,
@@ -201,6 +204,10 @@ export class GameScene_4 extends BaseGameScene {
 
         // Update bar image for next question
         const barKeys = ['game4_q1_bar', 'game4_q2_bar', 'game4_q3_bar'];
+        const questionKeys = ['game4_q1', 'game4_q2', 'game4_q3'];
+
+        // Update question and bar textures
+        this.barQuestion.setTexture(questionKeys[this.successfulHits]);
         this.bar.setTexture(barKeys[this.successfulHits]);
 
         console.log(`Moving to bar ${this.successfulHits + 1}`);
@@ -234,6 +241,10 @@ export class GameScene_4 extends BaseGameScene {
 
         if (this.bar) {
             this.bar.setTexture('game4_q1_bar');
+        }
+
+        if (this.barQuestion) {
+            this.barQuestion.setTexture('game4_q1');
         }
     }
 
