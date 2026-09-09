@@ -219,6 +219,7 @@ export class MainStreetScene extends Phaser.Scene {
 
         this.btnLeft = new CustomButton(this, 150, height / 2, 'prev_button', 'prev_button_click',
             () => {
+                if (this.isTalking) return;
                 this.isLeftDown = true;
                 this.handleAnimation(genderKey, true, true);
             },
@@ -230,12 +231,13 @@ export class MainStreetScene extends Phaser.Scene {
 
         this.btnRight = new CustomButton(this, width - 150, height / 2, 'next_button', 'next_button_click',
             () => {
+                if (this.isTalking) return;
                 this.isRightDown = true;
                 this.handleAnimation(genderKey, true, false);
             },
             () => {
                 this.isRightDown = false;
-                this.handleAnimation(genderKey, false, true);
+                this.handleAnimation(genderKey, false, false);
             }
         ).setScrollFactor(0).setDepth(100);
 
@@ -304,10 +306,12 @@ export class MainStreetScene extends Phaser.Scene {
     update() {
         const speed = 5;
         let isMoving = false;
-        let isLeft = this.playerSprite.lastDirectionLeft; // 保持最後的方向狀態
+        let isLeft = this.playerSprite.lastDirectionLeft;
 
-        // 純按鈕判定
-        if (this.isLeftDown) {
+        if (this.isTalking) {
+            this.isLeftDown = false;
+            this.isRightDown = false;
+        } else if (this.isLeftDown) {
             this.playerSprite.x -= speed;
             isLeft = true;
             isMoving = true;
@@ -315,13 +319,11 @@ export class MainStreetScene extends Phaser.Scene {
             this.playerSprite.x += speed;
             isLeft = false;
             isMoving = true;
-        } else {
-            this.playerSprite.x += 0;
-            isMoving = false;
         }
-        this.playerSprite.lastDirectionLeft = isLeft;
 
+        this.playerSprite.lastDirectionLeft = isLeft;
         this.playerSprite.x = Phaser.Math.Clamp(this.playerSprite.x, 600, 5300);
+        this.handleAnimation(this.genderKey, isMoving, isLeft);
 
 
         const allNpcs = [...this.interactiveNpcs];
@@ -366,31 +368,34 @@ export class MainStreetScene extends Phaser.Scene {
     }
 
     handleAnimation(gender, isMoving, isLeft) {
-        let walkKey = `${gender}_left_walk_anim`;
-        let idleKey = `${gender}_idle_anim`;
+        if (!this.playerSprite || this.isTalking) return;
 
+        const walkKey = isLeft ? `${gender}_left_walk_anim` : `${gender}_right_walk_anim`;
+        const idleKey = `${gender}_idle_anim`;
+
+        this.playerSprite.setFlipX(false);
         if (isMoving) {
-            // true means: if 'walkKey' is already playing, don't restart it
             this.playerSprite.play(walkKey, true);
-            if (!isLeft) {
-                this.playerSprite.setFlipX(true);
-            } else {
-                this.playerSprite.setFlipX(false);
-            }
         } else {
             this.playerSprite.play(idleKey, true);
         }
     }
 
     switchTalkingAnimation(gender, isLeft) {
+        if (!this.playerSprite) return;
         if (isLeft === undefined) isLeft = this.playerSprite.lastDirectionLeft;
-        let talkKey = isLeft ? `${gender}_left_talk_anim` : `${gender}_right_talk_anim`;
-        this.playerSprite.play(talkKey, true);
-        this.playerSprite.setFlipX(false); // talking animations seem to have dedicated left/right sprites
+        const talkKey = isLeft ? `${gender}_left_talk_anim` : `${gender}_right_talk_anim`;
+        this.playerSprite.setFlipX(false);
+        if (this.anims.exists(talkKey)) {
+            this.playerSprite.play(talkKey, true);
+        } else {
+            this.playerSprite.play(`${gender}_idle_anim`, true);
+        }
     }
 
 
     closeActiveBubble() {
+        this.isTalking = false;
         VoiceOverHelper.stop(this);
         if (this.bubbleTimers) {
             this.bubbleTimers.forEach(t => t.remove());
@@ -406,6 +411,10 @@ export class MainStreetScene extends Phaser.Scene {
         }
         this.bubbleImg = null;
         this.characterBubbleImg = null;
+        if (this.playerSprite) {
+            this.playerSprite.setFlipX(false);
+            this.playerSprite.play(`${this.genderKey}_idle_anim`, true);
+        }
     }
 
     startGameFromStreet(sceneKey) {
@@ -420,6 +429,12 @@ export class MainStreetScene extends Phaser.Scene {
     loadBubble(index = 0, bubbles, sceneKey, targetNpc, locked = false) {
         const facingLeft = (this.playerSprite.x - targetNpc.x) > 0;
         this.closeActiveBubble();
+
+        this.isTalking = true;
+        this.isLeftDown = false;
+        this.isRightDown = false;
+        this.playerSprite.lastDirectionLeft = facingLeft;
+        this.switchTalkingAnimation(this.genderKey, facingLeft);
 
         if (!bubbles || bubbles.length === 0) {
             this.startGameFromStreet(sceneKey);
@@ -438,9 +453,7 @@ export class MainStreetScene extends Phaser.Scene {
 
             const textureKey = VoiceOverHelper.resolveTexture(this, bubbles[lineIndex]);
             const isPlayerLine = locked || lineIndex % 2 === 1;
-            if (isPlayerLine) {
-                this.switchTalkingAnimation(this.genderKey, facingLeft);
-            }
+            this.switchTalkingAnimation(this.genderKey, facingLeft);
 
             if (!this.bubbleImg) {
                 this.bubbleImg = this.add.image(this.centerX, 900, textureKey)
@@ -574,75 +587,33 @@ export class MainStreetScene extends Phaser.Scene {
 
 
         // Player character animations
+        const lastFrame = (key, frameWidth, frameHeight) => {
+            const texture = this.textures.get(key);
+            if (!texture || !texture.getSourceImage) return 0;
+            const src = texture.getSourceImage();
+            if (!src) return 0;
+            const cols = Math.max(1, Math.floor(src.width / frameWidth));
+            const rows = Math.max(1, Math.floor(src.height / frameHeight));
+            return cols * rows - 1;
+        };
 
-        this.anims.create({
-            key: 'boy_idle_anim',
-            frames: this.anims.generateFrameNumbers('boy_idle', { start: 0, end: 152 }),
-            frameRate: 24,
-            repeat: -1
-        });
+        const makePlayerAnim = (key) => {
+            if (!this.textures.exists(key) || this.anims.exists(`${key}_anim`)) return;
+            this.anims.create({
+                key: `${key}_anim`,
+                frames: this.anims.generateFrameNumbers(key, {
+                    start: 0,
+                    end: lastFrame(key, 300, 350)
+                }),
+                frameRate: 24,
+                repeat: -1
+            });
+        };
 
-        this.anims.create({
-            key: 'boy_left_talk_anim',
-            frames: this.anims.generateFrameNumbers('boy_left_talk', { start: 0, end: 168 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'boy_right_talk_anim',
-            frames: this.anims.generateFrameNumbers('boy_right_talk', { start: 0, end: 168 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'boy_left_walk_anim',
-            frames: this.anims.generateFrameNumbers('boy_left_walk', { start: 0, end: 48 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'boy_right_walk_anim',
-            frames: this.anims.generateFrameNumbers('boy_right_walk', { start: 0, end: 48 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'girl_idle_anim',
-            frames: this.anims.generateFrameNumbers('girl_idle', { start: 0, end: 152 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'girl_left_talk_anim',
-            frames: this.anims.generateFrameNumbers('girl_left_talk', { start: 0, end: 23 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'girl_right_talk_anim',
-            frames: this.anims.generateFrameNumbers('girl_right_talk', { start: 0, end: 49 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'girl_left_walk_anim',
-            frames: this.anims.generateFrameNumbers('girl_left_walk', { start: 0, end: 48 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'girl_right_walk_anim',
-            frames: this.anims.generateFrameNumbers('girl_right_walk', { start: 0, end: 48 }),
-            frameRate: 10,
-            repeat: -1
+        ['boy', 'girl'].forEach((prefix) => {
+            ['idle', 'left_talk', 'right_talk', 'left_walk', 'right_walk'].forEach((name) => {
+                makePlayerAnim(`${prefix}_${name}`);
+            });
         });
     }
 

@@ -1,4 +1,5 @@
 import GameManager from '../scenes/GameManager.js';
+import { gameConfig } from '../config.js';
 
 export default class VoiceOverHelper {
     static FADE_MS = 200;
@@ -275,6 +276,7 @@ export default class VoiceOverHelper {
     }
 
     static arePrereqsMet(gameId) {
+        if (gameConfig.isTesting) return true;
         const results = GameManager.loadGameResult();
         const needed = gameId === 5 ? [4]
             : gameId === 6 ? [1]
