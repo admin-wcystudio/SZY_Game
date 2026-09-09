@@ -18,9 +18,6 @@ export class GameScene_4 extends BaseGameScene {
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
 
-        this.load.image('game4_npc_box_intro', `${path}game4_npc_box5.png`);
-        this.load.image('game4_npc_box_win', `${path}game4_npc_box3.png`);
-        this.load.image('game4_npc_box_tryagain', `${path}game4_npc_box4.png`);
         VoiceOverHelper.preload(this);
         VoiceOverHelper.preloadImages(this, VoiceOverHelper.inGameImageKeys(4));
 
@@ -45,7 +42,7 @@ export class GameScene_4 extends BaseGameScene {
         this.bar = this.add.image(this.centerX, this.centerY + 100, 'game4_q1_bar')
             .setDepth(500).setVisible(true);
 
-        this.initGame('game4_bg', 'game4_description', false, false, {
+        this.initGame('game4_bg', 'game4_description', true, false, {
             targetRounds: 3,
             roundPerSeconds: 60,
             isAllowRoundFail: false,

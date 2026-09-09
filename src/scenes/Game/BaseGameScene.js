@@ -130,7 +130,8 @@ export default class BaseGameScene extends Phaser.Scene {
             keys = [...(config.streetLock || [])];
         }
 
-        if (keys.length === 0) {
+        const introCancelled = type === 'intro' && Array.isArray(config.intro) && config.intro.length === 0;
+        if (keys.length === 0 && !introCancelled) {
             const semantic = this._semanticBubbleKey(type, gender);
             if (semantic) keys = [semantic];
         }

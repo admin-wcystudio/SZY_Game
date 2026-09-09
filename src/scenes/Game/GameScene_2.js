@@ -43,6 +43,9 @@ export class GameScene_2 extends BaseGameScene {
             this.load.spritesheet('boy_frontstop', path +
                 'game2_boy_frontstop.png', { frameWidth: 105, frameHeight: 105 });
 
+            this.load.spritesheet('boy_idle', path +
+                'game2_boy_idle.png', { frameWidth: 105, frameHeight: 105 });
+
             this.load.spritesheet('boy_frontwalking', path +
                 'game2_boy_frontwalking.png', { frameWidth: 105, frameHeight: 105 });
 
@@ -66,6 +69,12 @@ export class GameScene_2 extends BaseGameScene {
 
             this.load.spritesheet('girl_frontwalking', path +
                 'game2_girl_frontwalking.png', { frameWidth: 105, frameHeight: 105 });
+
+            this.load.spritesheet('girl_frontstop', path +
+                'game2_girl_idle.png', { frameWidth: 105, frameHeight: 105 });
+
+            this.load.spritesheet('girl_idle', path +
+                'game2_girl_idle.png', { frameWidth: 105, frameHeight: 105 });
 
             this.load.spritesheet('girl_leftstop', path +
                 'game2_girl_leftstop.png', { frameWidth: 105, frameHeight: 105 });
@@ -106,35 +115,41 @@ export class GameScene_2 extends BaseGameScene {
             sceneIndex: 2
         });
 
-        // Direction buttons
-        this.leftBtn = new CustomButton(this, 1500, 950, 'left_btn', 'left_btn_click', () => {
-            this.moveDirection('left');
-        }, () => { }).setDepth(2);
+        this.heldDirection = null;
 
-        this.rightBtn = new CustomButton(this, 1800, 950, 'right_btn', 'right_btn_click', () => {
-            this.moveDirection('right');
-        }, () => { }).setDepth(2);
+        // Direction buttons — walk while held, idle when released
+        this.leftBtn = new CustomButton(this, 1500, 950, 'left_btn', 'left_btn_click',
+            () => this.startHold('left'),
+            () => this.endHold('left')
+        ).setDepth(2);
 
-        this.upBtn = new CustomButton(this, 1650, 800, 'up_btn', 'up_btn_click', () => {
-            this.moveDirection('up');
-        }, () => { }).setDepth(2);
+        this.rightBtn = new CustomButton(this, 1800, 950, 'right_btn', 'right_btn_click',
+            () => this.startHold('right'),
+            () => this.endHold('right')
+        ).setDepth(2);
 
-        this.downBtn = new CustomButton(this, 1650, 950, 'down_btn', 'down_btn_click', () => {
-            this.moveDirection('down');
-        }, () => { }).setDepth(2);
+        this.upBtn = new CustomButton(this, 1650, 800, 'up_btn', 'up_btn_click',
+            () => this.startHold('up'),
+            () => this.endHold('up')
+        ).setDepth(2);
+
+        this.downBtn = new CustomButton(this, 1650, 950, 'down_btn', 'down_btn_click',
+            () => this.startHold('down'),
+            () => this.endHold('down')
+        ).setDepth(2);
+
+        this.input.on('pointerup', () => this.endHold(this.heldDirection));
 
         // Character setup
         this.genderKey = this.gender === 'M' ? 'boy' : 'girl';
         console.log('genderKey:', this.genderKey);
 
-        // Use frontstop for boy, frontwalking for girl (girl_frontstop doesn't exist)
-        const idleKey = this.gender === 'M' ? 'frontstop' : 'frontwalking';
-        this.idleAnimKey = `${this.genderKey}_${idleKey}_anim`;
+        this.idleAnimKey = `${this.genderKey}_idle_anim`;
         this.lastDirection = 'down';
 
-        // Create player at starting position as a normal sprite (NO physics body)
-        this.player = this.add.sprite(this.playerStartX, this.playerStartY, `${this.genderKey}_${idleKey}`)
+        this.player = this.add.sprite(this.playerStartX, this.playerStartY, `${this.genderKey}_idle`)
             .setOrigin(0.5, 0.5).setDepth(2).setScale(2);
+        this.player.anims.play(this.idleAnimKey, true);
 
 
 
@@ -202,49 +217,77 @@ export class GameScene_2 extends BaseGameScene {
     }
 
 
+    startHold(direction) {
+        this.heldDirection = direction;
+        this.moveDirection(direction);
+    }
+
+    endHold(direction) {
+        if (!direction || this.heldDirection !== direction) return;
+        this.heldDirection = null;
+        if (!this.isMoving) this.playStopPose();
+    }
+
+    playStopPose() {
+        if (!this.player) return;
+        const prefix = this.genderKey;
+        const stopTexture = {
+            left: `${prefix}_leftstop`,
+            right: `${prefix}_rightstop`,
+            up: `${prefix}_backstop`,
+            down: `${prefix}_idle`
+        }[this.lastDirection] || `${prefix}_idle`;
+
+        this.player.setFlipX(false);
+        this.player.anims.stop();
+        if (this.textures.exists(stopTexture)) {
+            this.player.setTexture(stopTexture, 0);
+        }
+    }
+
+    update() {
+        if (this.heldDirection && !this.isMoving && this.isGameActive) {
+            this.moveDirection(this.heldDirection);
+        }
+    }
+
     moveDirection(direction) {
-        if (this.isMoving || !this.isGameActive) return;
+        if (this.isMoving || !this.isGameActive || !this.player) return;
 
         let targetX = this.player.x;
         let targetY = this.player.y;
-        let walkAnimKey, stopAnimKey;
+        let walkAnimKey;
 
         switch (direction) {
             case 'left':
                 targetX -= this.moveStep;
                 walkAnimKey = `${this.genderKey}_leftwalking_anim`;
-                stopAnimKey = `${this.genderKey}_leftstop_anim`;
                 break;
             case 'right':
                 targetX += this.moveStep;
                 walkAnimKey = `${this.genderKey}_rightwalking_anim`;
-                stopAnimKey = `${this.genderKey}_rightstop_anim`;
                 break;
             case 'up':
                 targetY -= this.moveStep;
                 walkAnimKey = `${this.genderKey}_backwalking_anim`;
-                stopAnimKey = `${this.genderKey}_backstop_anim`;
                 break;
             case 'down':
                 targetY += this.moveStep;
                 walkAnimKey = `${this.genderKey}_frontwalking_anim`;
-                stopAnimKey = this.gender === 'M'
-                    ? `${this.genderKey}_frontstop_anim`
-                    : `${this.genderKey}_frontwalking_anim`;
-
-            default:
                 break;
+            default:
+                return;
         }
 
         // Manual intersection check against walls using points instead of Arcade physics
         if (this.wouldCollideWithWall(targetX - 20, targetY - 30)) {
-            console.log('[GameScene_2] Blocked by wall!');
+            this.playStopPose();
             return;
         }
 
         this.lastDirection = direction;
         this.isMoving = true;
-
+        this.player.setFlipX(false);
         this.player.anims.play(walkAnimKey, true);
 
         // Smoothly tween the position since arcade physics velocity isn't being used
@@ -261,10 +304,9 @@ export class GameScene_2 extends BaseGameScene {
             onComplete: () => {
                 this.isMoving = false;
                 this.player.setFlipX(false);
-                this.player.anims.play(stopAnimKey, true);
-
                 this.checkCoinCollision();
                 this.checkPenCollection();
+                if (!this.heldDirection) this.playStopPose();
             }
         });
     }
@@ -413,6 +455,7 @@ export class GameScene_2 extends BaseGameScene {
 
     enableGameInteraction(enabled) {
         this.canSpawn = enabled;
+        if (!enabled) this.endHold(this.heldDirection);
         this.leftBtn.setVisible(enabled);
         this.rightBtn.setVisible(enabled);
         this.upBtn.setVisible(enabled);
@@ -434,22 +477,26 @@ export class GameScene_2 extends BaseGameScene {
     /** Reset player position only */
     resetPlayerPosition() {
         this.isMoving = false;
+        this.heldDirection = null;
+        this.lastDirection = 'down';
         if (this.player) {
             this.player.x = this.playerStartX;
             this.player.y = this.playerStartY;
-            this.player.anims.play(this.idleAnimKey, true);
+            this.playStopPose();
         }
     }
 
     resetForNewRound() {
         this.isMoving = false;
+        this.heldDirection = null;
+        this.lastDirection = 'down';
         this.lives = 3;
         this.collectedPens = 0;
 
         if (this.player) {
             this.player.x = this.playerStartX;
             this.player.y = this.playerStartY;
-            this.player.anims.play(this.idleAnimKey, true);
+            this.playStopPose();
         }
 
         // Destroy and re-place items
@@ -495,15 +542,17 @@ export class GameScene_2 extends BaseGameScene {
 
         // Per-animation frame range. Omit `end` to use the full sheet.
         const animFrames = this.gender === 'M' ? {
-            backstop: { start: 0 },
+            idle: { start: 0, end: 0 },
+            backstop: { start: 0, end: 0 },
             backwalking: { start: 0 },
-            frontstop: { start: 0 },
+            frontstop: { start: 0, end: 0 },
             frontwalking: { start: 0 },
-            leftstop: { start: 0 },
+            leftstop: { start: 0, end: 0 },
             leftwalking: { start: 0 },
-            rightstop: { start: 0 },
+            rightstop: { start: 0, end: 0 },
             rightwalking: { start: 0 }
         } : {
+            idle: { start: 0, end: 0 },
             backstop: { start: 0, end: 0 },
             backwalking: { start: 0, end: 10 },
             frontstop: { start: 0, end: 0 },
@@ -523,7 +572,7 @@ export class GameScene_2 extends BaseGameScene {
             const max = lastFrame(key);
             const start = Phaser.Math.Clamp(range.start ?? 0, 0, max);
             const end = Phaser.Math.Clamp(range.end ?? max, start, max);
-            const isStop = name.endsWith('stop');
+            const isStop = name.endsWith('stop') || name === 'idle';
 
             this.anims.create({
                 key: animKey,
