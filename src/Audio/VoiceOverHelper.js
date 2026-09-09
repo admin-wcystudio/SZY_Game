@@ -2,6 +2,8 @@ import GameManager from '../scenes/GameManager.js';
 
 export default class VoiceOverHelper {
     static FADE_MS = 200;
+    static BGM_VOLUME = 0.18;
+    static BGM_DUCKED_VOLUME = 0.05;
     static IMAGE_BASE = 'assets/images';
     static AUDIO_BASE = 'assets/VO';
 
@@ -128,32 +130,97 @@ export default class VoiceOverHelper {
         'Game_7/game7_npc_box8'
     ];
 
+    static AUDIO_STEMS = [
+        'Game_1/game1_npc_box1',
+        'Game_1/game1_npc_boy_box2',
+        'Game_1/game1_npc_girl_box2',
+        'Game_1/game1_npc_box3',
+        'Game_1/game1_npc_boy_box4',
+        'Game_1/game1_npc_girl_box4',
+        'Game_1/game1_npc_box5',
+        'Game_1/game1_npc_boy_box6',
+        'Game_1/game1_npc_girl_box6',
+        'Game_1/game1_npc_box7',
+        'Game_2/game2_npc_box1',
+        'Game_2/game2_npc_box2',
+        'Game_2/game2_npc_girl_box2',
+        'Game_2/game2_npc_box3',
+        'Game_2/game2_npc_box4',
+        'Game_2/game2_npc_box5',
+        'Game_3/game3_npc_box1',
+        'Game_3/game3_npc_boy_box2',
+        'Game_3/game3_npc_girl_box2',
+        'Game_3/game3_npc_box3',
+        'Game_3/game3_npc_box4',
+        'Game_3/game3_npc_box5',
+        'Game_4/game4_npc_box1',
+        'Game_4/game4_npc_boy_box2',
+        'Game_4/game4_npc_girl_box2',
+        'Game_4/game4_npc_box3',
+        'Game_4/game4_npc_box4',
+        'Game_5/game5_npc_box1',
+        'Game_5/game5_npc_boy_box2',
+        'Game_5/game5_npc_girl_box2',
+        'Game_5/game5_npc_boy_box12',
+        'Game_5/game5_npc_girl_box12',
+        'Game_5/game5_npc_box4',
+        'Game_5/game5_npc_boy_box5',
+        'Game_5/game5_npc_girl_box5',
+        'Game_5/game5_npc_box6',
+        'Game_5/game5_npc_boy_box7',
+        'Game_5/game5_npc_girl_box7',
+        'Game_5/game5_npc_box8',
+        'Game_5/game5_npc_boy_box9',
+        'Game_5/game5_npc_girl_box9',
+        'Game_5/game5_npc_box10',
+        'Game_5/game5_npc_box11',
+        'Game_6/game6_npc_box1',
+        'Game_6/game6_npc_boy_box2',
+        'Game_6/game6_npc_girl_box2',
+        'Game_6/game6_npc_boy_box3',
+        'Game_6/game6_npc_girl_box3',
+        'Game_6/game6_npc_box4',
+        'Game_6/game6_npc_boy_box5',
+        'Game_6/game6_npc_girl_box5',
+        'Game_6/game6_npc_boy_box6',
+        'Game_6/game6_npc_girl_box6',
+        'Game_6/game6_npc_box7',
+        'Game_7/game7_npc_box1',
+        'Game_7/game7_npc_box2',
+        'Game_7/game7_npc_box3',
+        'Game_7/game7_npc_boy_box4',
+        'Game_7/game7_npc_girl_box4',
+        'Game_7/game7_npc_box5',
+        'Game_7/game7_npc_boy_box6',
+        'Game_7/game7_npc_girl_box6',
+        'Game_7/game7_npc_box7',
+        'Game_7/game7_npc_boy_box7',
+        'Game_7/game7_npc_girl_box7',
+        'Game_7/game7_npc_box8'
+    ];
+
     static toArray(value) {
         if (!value) return [];
         return Array.isArray(value) ? value : [value];
     }
 
-    static fileVariants(fileBase) {
-        const variants = [fileBase];
-        if (/^game(\d+)_npc_/.test(fileBase) && !/^game(\d+)_\1_/.test(fileBase)) {
-            variants.push(fileBase.replace(/^(game\d+)_/, '$1_$1_'));
-        }
-        return variants;
-    }
-
     static preload(scene) {
-        VoiceOverHelper.STEMS.forEach((stem) => {
+        if (!scene._voLoadErrorBound) {
+            scene._voLoadErrorBound = true;
+            scene.load.on('loaderror', (file) => {
+                if (file && file.type === 'audio' && file.key !== 'bgm') {
+                    console.warn('[VO] skipped missing audio', file.key);
+                }
+            });
+        }
+
+        VoiceOverHelper.AUDIO_STEMS.forEach((stem) => {
             const [folder, fileBase] = stem.split('/');
-            VoiceOverHelper.fileVariants(fileBase).forEach((variant) => {
-                ['Mandarin', 'Cantonese'].forEach((lang) => {
-                    const key = `${variant}_${lang}`;
-                    if (!scene.cache.audio.exists(key)) {
-                        scene.load.audio(key, [
-                            `${VoiceOverHelper.AUDIO_BASE}/${folder}/${variant}_${lang}.mp3`,
-                            `${VoiceOverHelper.IMAGE_BASE}/${folder}/${variant}_${lang}.mp3`
-                        ]);
-                    }
-                });
+            ['Mandarin', 'Cantonese'].forEach((lang) => {
+                const key = `${fileBase}_${lang}`;
+                if (!scene.cache.audio.exists(key)) {
+                    scene.load.audio(key, `${VoiceOverHelper.AUDIO_BASE}/${folder}/${fileBase}_${lang}.mp3`);
+                }
             });
         });
     }
@@ -250,9 +317,6 @@ export default class VoiceOverHelper {
         const mywGendered = /^(game\d+_npc_box\d+)_(?:boy|girl)$/.exec(bubbleKey);
         if (mywGendered) return mywGendered[1];
 
-        const dupPrefix = /^(game\d+)_\1_(npc_box\d+)$/.exec(bubbleKey);
-        if (dupPrefix) return `${dupPrefix[1]}_${dupPrefix[2]}`;
-
         if (/^game\d+_npc_box\d+$/.test(bubbleKey)) return bubbleKey;
 
         const npcBubble = /^npc(\d+)_bubble_(\d+)$/.exec(bubbleKey);
@@ -327,15 +391,12 @@ export default class VoiceOverHelper {
     static audioCandidates(boxBase, isPlayer) {
         const lang = VoiceOverHelper.getLanguageSuffix();
         const genderTag = VoiceOverHelper.getGenderTag();
-        const bases = VoiceOverHelper.fileVariants(boxBase);
+        const szyGendered = VoiceOverHelper.szyGenderedKey(boxBase, genderTag);
         const keys = [];
 
-        bases.forEach((base) => {
-            const szyGendered = VoiceOverHelper.szyGenderedKey(base, genderTag);
-            if (szyGendered !== base) keys.push(`${szyGendered}_${lang}`);
-            keys.push(`${base}_${genderTag}_${lang}`);
-            keys.push(`${base}_${lang}`);
-        });
+        if (szyGendered !== boxBase) keys.push(`${szyGendered}_${lang}`);
+        keys.push(`${boxBase}_${genderTag}_${lang}`);
+        keys.push(`${boxBase}_${lang}`);
 
         const unique = [...new Set(keys)];
         if (isPlayer) return unique;
@@ -360,7 +421,74 @@ export default class VoiceOverHelper {
         return scene.cache.audio.exists(szy) || scene.cache.audio.exists(myw);
     }
 
-    static stop(scene) {
+    static getBgm(scene) {
+        return scene.sound.get('bgm');
+    }
+
+    static ensureBgm(scene) {
+        if (!scene?.sound || !scene.cache.audio.exists('bgm')) return;
+
+        if (scene.sound.locked) {
+            scene.sound.once('unlocked', () => VoiceOverHelper.ensureBgm(scene));
+            return;
+        }
+
+        let bgm = VoiceOverHelper.getBgm(scene);
+        if (!bgm) {
+            bgm = scene.sound.add('bgm', {
+                loop: true,
+                volume: VoiceOverHelper.BGM_VOLUME
+            });
+        }
+
+        bgm.setLoop(true);
+        const volume = scene.currentVo
+            ? VoiceOverHelper.BGM_DUCKED_VOLUME
+            : VoiceOverHelper.BGM_VOLUME;
+
+        if (bgm.isPaused) {
+            bgm.resume();
+        }
+        if (!bgm.isPlaying) {
+            bgm.play({ loop: true, volume });
+        } else {
+            bgm.setVolume(volume);
+        }
+    }
+
+    static fadeBgm(scene, volume) {
+        const bgm = VoiceOverHelper.getBgm(scene);
+        if (!bgm) return;
+        if (scene.currentBgmTween) {
+            scene.currentBgmTween.stop();
+            scene.currentBgmTween = null;
+        }
+        if (!scene.sys?.isActive() || !scene.tweens) {
+            bgm.setVolume(volume);
+            return;
+        }
+        scene.currentBgmTween = scene.tweens.add({
+            targets: bgm,
+            volume,
+            duration: VoiceOverHelper.FADE_MS
+        });
+    }
+
+    static duckBgm(scene) {
+        VoiceOverHelper.fadeBgm(scene, VoiceOverHelper.BGM_DUCKED_VOLUME);
+    }
+
+    static restoreBgm(scene) {
+        const bgm = VoiceOverHelper.getBgm(scene);
+        if (!bgm || !bgm.isPlaying) {
+            VoiceOverHelper.ensureBgm(scene);
+            return;
+        }
+        VoiceOverHelper.fadeBgm(scene, VoiceOverHelper.BGM_VOLUME);
+    }
+
+    static stop(scene, options = {}) {
+        const restoreBgm = options.restoreBgm !== false;
         if (scene.currentVoTween) {
             scene.currentVoTween.stop();
             scene.currentVoTween = null;
@@ -370,28 +498,42 @@ export default class VoiceOverHelper {
             scene.currentVo.destroy();
             scene.currentVo = null;
         }
+        if (restoreBgm) VoiceOverHelper.restoreBgm(scene);
     }
 
     static playBubbleVo(scene, bubbleKey, isPlayer = null) {
-        VoiceOverHelper.stop(scene);
+        VoiceOverHelper.stop(scene, { restoreBgm: false });
         const boxBase = VoiceOverHelper.boxBaseFromBubbleKey(bubbleKey);
-        if (!boxBase) return;
+        if (!boxBase) {
+            VoiceOverHelper.restoreBgm(scene);
+            return;
+        }
 
         if (isPlayer === null) {
             isPlayer = VoiceOverHelper.hasGenderedAudio(scene, boxBase);
         }
 
         const voKey = VoiceOverHelper.resolveKey(scene, boxBase, isPlayer);
-        if (!voKey) return;
+        if (!voKey) {
+            VoiceOverHelper.restoreBgm(scene);
+            return;
+        }
 
         const sound = scene.sound.add(voKey);
         sound.setVolume(0);
         sound.play();
         scene.currentVo = sound;
+        VoiceOverHelper.duckBgm(scene);
         scene.currentVoTween = scene.tweens.add({
             targets: sound,
             volume: 1,
             duration: VoiceOverHelper.FADE_MS
+        });
+        sound.once('complete', () => {
+            if (scene.currentVo === sound) {
+                scene.currentVo = null;
+                VoiceOverHelper.restoreBgm(scene);
+            }
         });
     }
 }

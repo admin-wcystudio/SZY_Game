@@ -14,6 +14,7 @@ class BaseButton extends Phaser.GameObjects.Image {
         // Configuration
         this.isClicked = false;     // Used for toggle mode
         this.needClicked = false;   // If true, behaves like a checkbox/toggle
+        this.locked = false;
         this.sfx = null;            // Placeholder for click sounds
 
         // Add to scene and enable input
@@ -31,7 +32,7 @@ class BaseButton extends Phaser.GameObjects.Image {
     }
 
     handleDown() {
-        if (!this.input?.enabled) return;
+        if (this.locked || !this.input?.enabled) return;
 
         this.playButtonClick();
 
@@ -51,7 +52,7 @@ class BaseButton extends Phaser.GameObjects.Image {
     }
 
     handleUp() {
-        if (!this.input?.enabled) return;
+        if (this.locked || !this.input?.enabled) return;
         if (!this.needClicked) {
             this.setNormalState();
             this.cbUp();
@@ -59,7 +60,7 @@ class BaseButton extends Phaser.GameObjects.Image {
     }
 
     handleOver() {
-        if (!this.input?.enabled || this.isClicked) return;
+        if (this.locked || !this.input?.enabled || this.isClicked) return;
         // Subtle hover effect: scale up slightly
         this.scene.tweens.add({
             targets: this,
@@ -69,7 +70,7 @@ class BaseButton extends Phaser.GameObjects.Image {
     }
 
     handleOut() {
-        if (!this.input?.enabled) return;
+        if (this.locked || !this.input?.enabled) return;
         if (!this.isClicked) {
             this.setNormalState();
         }
@@ -97,14 +98,25 @@ class BaseButton extends Phaser.GameObjects.Image {
     }
 
     setActive(canEnable) {
+        if (this.locked) return;
         if (!canEnable) {
             this.disableInteractive();
             this.setTint(0x888888); // Greyscale look
             this.setAlpha(0.7);
         } else {
-            this.setInteractive();
+            this.setInteractive({ useHandCursor: true });
             this.clearTint();
             this.setAlpha(1);
+        }
+    }
+
+    setLocked(locked) {
+        this.locked = !!locked;
+        if (this.locked) {
+            this.disableInteractive();
+            if (typeof this.removeInteractive === 'function') {
+                this.removeInteractive();
+            }
         }
     }
 

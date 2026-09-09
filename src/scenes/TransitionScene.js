@@ -6,7 +6,7 @@ export class TransitionScene extends Phaser.Scene {
     create() {
 
         this.bgVideo = this.add.video(960, 540, 'transition').setDepth(12).setVisible(true);
-        this.bgVideo.setMute(false);
+        this.bgVideo.setMute(true);
         this.bgVideo.play(true);
 
         this.time.delayedCall(1000, () => {

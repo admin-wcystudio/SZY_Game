@@ -2,6 +2,7 @@ import { CustomButton } from '../UI/Button.js';
 import UIHelper from '../UI/UIHelper.js';
 import { CustomPanel, SettingPanel } from '../UI/Panel.js';
 import NpcHelper from '../Character/NpcHelper.js';
+import VoiceOverHelper from '../Audio/VoiceOverHelper.js';
 
 export default class GameManager {
     static saveGameResult(sceneIndex, isCompleted, seconds = 0) {
@@ -50,6 +51,8 @@ export default class GameManager {
         scene.cameras.main.fadeOut(500, 0, 0, 0);
 
         scene.cameras.main.once('camerafadeoutcomplete', () => {
+            VoiceOverHelper.stop(scene);
+            VoiceOverHelper.ensureBgm(scene);
             scene.scene.start('MainStreetScene');
         });
     }
@@ -57,6 +60,10 @@ export default class GameManager {
     static switchToGameScene(scene, gameSceneKey) {
         scene.cameras.main.fadeOut(500, 0, 0, 0);
         scene.cameras.main.once('camerafadeoutcomplete', () => {
+            VoiceOverHelper.stop(scene);
+            if (gameSceneKey === 'MainStreetScene') {
+                VoiceOverHelper.ensureBgm(scene);
+            }
             scene.scene.start(gameSceneKey);
         });
     }

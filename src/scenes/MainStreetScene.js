@@ -157,6 +157,7 @@ export class MainStreetScene extends Phaser.Scene {
     create() {
         // Create NPC animations
         this.createAnimations();
+        VoiceOverHelper.ensureBgm(this);
         this.events.once('shutdown', () => VoiceOverHelper.stop(this));
 
         const width = this.cameras.main.width;

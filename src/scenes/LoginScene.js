@@ -1,6 +1,7 @@
 import { CustomButton } from '../UI/Button.js';
 import { CustomPanel, SettingPanel } from '../UI/Panel.js';
 import UIHelper from '../UI/UIHelper.js';
+import VoiceOverHelper from '../Audio/VoiceOverHelper.js';
 
 export class LoginScene extends Phaser.Scene {
     constructor() {
@@ -22,22 +23,23 @@ export class LoginScene extends Phaser.Scene {
         this.load.image('bubble1', loginPath + 'choosepage_bubble1.png');
         this.load.image('bubble2', loginPath + 'choosepage_bubble2.png');
 
+        // frame = png size / (cols x rows)
         this.load.spritesheet('boy_galaxy', loginPath + 'choosepage_boy_galaxy.png',
-            { frameWidth: 350, frameHeight: 450 });
+            { frameWidth: 700, frameHeight: 900 }); // 3500x3600 / 5x4
 
         this.load.spritesheet('boy_chinese', loginPath + 'choosepage_boy_chinese.png',
-            { frameWidth: 350, frameHeight: 450 });
+            { frameWidth: 700, frameHeight: 900 }); // 3500x3600 / 5x4
 
         this.load.spritesheet('boy_transition', loginPath + 'choosepage_boy_galaxytochinese_transition.png',
-            { frameWidth: 350, frameHeight: 450 });
+            { frameWidth: 700, frameHeight: 900 }); // 5600x7200 / 8x8
 
         this.load.spritesheet('girl_galaxy', loginPath + 'choosepage_girl_galaxy.png',
-            { frameWidth: 350, frameHeight: 450 });
+            { frameWidth: 700, frameHeight: 900 }); // 3500x3600 / 5x4
 
         this.load.spritesheet('girl_chinese', loginPath + 'choosepage_girl_chinese.png',
-            { frameWidth: 350, frameHeight: 450 });
+            { frameWidth: 350, frameHeight: 450 }); // 3500x4500 / 10x10
         this.load.spritesheet('girl_transition', loginPath + 'choosepage_girl_galaxytochinese_transition.png',
-            { frameWidth: 350, frameHeight: 450 });
+            { frameWidth: 700, frameHeight: 900 }); // 5600x3600 / 8x4
 
         this.load.video('transition', loginPath + 'Transition.mp4');
     }
@@ -113,22 +115,23 @@ export class LoginScene extends Phaser.Scene {
             backgroundColor: 'transparent'
         }).setDepth(20).setVisible(true);
 
-        this.nameInput.on('textchange', (inputText) => {
-            console.log("現在的名字是:", inputText.text);
-        });
-
         this.selectedGender = 'M';
+        this.genderLocked = false;
+
+        this.nameInput.on('textchange', () => {
+            this.updateGenderButtonsEnabled();
+        });
 
         // 1. Add the sprite (using the first spritesheet as initial texture)
         this.boySprite = this.add.sprite(620, 540, 'boy_galaxy')
             .setDepth(10)
-            .setScrollFactor(0).setScale(2);
+            .setScrollFactor(0).setScale(1);
 
         this.boySprite.play('boy_galaxy_anim');
 
         this.girlSprite = this.add.sprite(1300, 560, 'girl_galaxy')
             .setDepth(10)
-            .setScrollFactor(0).setScale(2);
+            .setScrollFactor(0).setScale(1);
 
         this.girlSprite.play('girl_galaxy_anim');
 
@@ -136,36 +139,64 @@ export class LoginScene extends Phaser.Scene {
         this.add.image(340, 350, 'bubble1').setDepth(11);
         this.add.image(1650, 360, 'bubble2').setDepth(11);
 
-        const boyBtn = new CustomButton(
+        this.boyBtn = new CustomButton(
             this, 620, 950,
             'login_boy_btn', 'login_boy_btn_click',
             () => {
                 this.savePlayerInfo('M');
-
             }, () => { });
 
-        const girlBtn = new CustomButton(
+        this.girlBtn = new CustomButton(
             this, 1300, 950,
             'login_girl_btn', 'login_girl_btn_click',
             () => {
                 this.savePlayerInfo('F');
             }, () => { });
 
+        this.updateGenderButtonsEnabled();
     }
 
-    savePlayerInfo(gender, currentSprite) {
-        const playerName = this.nameInput.text;
+    hasPlayerName() {
+        return !!(this.nameInput?.text && this.nameInput.text.trim());
+    }
 
-        if (!playerName || playerName.trim() === "") {
-            UIHelper.showToast(this, "請先輸入名字"); // 使用 Helper 提示
+    updateGenderButtonsEnabled() {
+        if (this.genderLocked) return;
+        const hasName = this.hasPlayerName();
+        this.boyBtn.setActive(hasName);
+        this.girlBtn.setActive(hasName);
+    }
+
+    lockGenderButtons(gender) {
+        const selectedBtn = gender === 'M' ? this.boyBtn : this.girlBtn;
+        const otherBtn = gender === 'M' ? this.girlBtn : this.boyBtn;
+
+        selectedBtn.isClicked = true;
+        selectedBtn.setPressedState();
+        selectedBtn.setLocked(true);
+
+        otherBtn.setActive(false);
+        otherBtn.setLocked(true);
+
+        if (this.nameInput?.setReadOnly) {
+            this.nameInput.setReadOnly(true);
+        }
+    }
+
+    savePlayerInfo(gender) {
+        if (this.genderLocked) return;
+        if (!this.hasPlayerName()) {
+            UIHelper.showToast(this, "請先輸入名字");
             return;
         }
 
+        this.genderLocked = true;
         this.selectedGender = gender;
+        this.lockGenderButtons(gender);
         this.switchAnimation();
+        VoiceOverHelper.ensureBgm(this);
 
-        // 儲存資料
-        const player = { name: playerName, gender: gender };
+        const player = { name: this.nameInput.text.trim(), gender: gender };
         localStorage.setItem('player', JSON.stringify(player));
 
         const allGamesResult = [
@@ -186,19 +217,16 @@ export class LoginScene extends Phaser.Scene {
         if (this.selectedGender === 'M') {
             this.girlSprite.play('girl_galaxy_anim');
             this.boySprite.play('boy_transition_anim');
-            this.boySprite.on('animationcomplete', () => {
-                this.time.delayedCall(1000, () => {
-                    this.boySprite.play('boy_chinese_anim');
-                });
+            this.boySprite.once('animationcomplete', () => {
+                this.boySprite.play('boy_chinese_anim');
             });
 
         } else {
             this.boySprite.play('boy_galaxy_anim');
             this.girlSprite.play('girl_transition_anim');
-            this.girlSprite.on('animationcomplete', () => {
-                this.time.delayedCall(1000, () => {
-                    this.girlSprite.play('girl_chinese_anim');
-                });
+            this.girlSprite.once('animationcomplete', () => {
+                this.girlSprite.setScale(2);
+                this.girlSprite.play('girl_chinese_anim');
             });
         }
     }
@@ -211,47 +239,45 @@ export class LoginScene extends Phaser.Scene {
 
     createAnimations() {
         this.anims.create({
-            key: 'boy_galaxy_anim',  // Name you will use in other scenes
-            frames: this.anims.generateFrameNumbers('boy_galaxy', { start: 0, end: 98 }),
-            frameRate: 30,
+            key: 'boy_galaxy_anim',
+            frames: this.anims.generateFrameNumbers('boy_galaxy', { start: 0, end: 19 }),
+            frameRate: 16,
             repeat: -1
         });
         this.anims.create({
-            key: 'boy_chinese_anim',  // Name you will use in other scenes
-            frames: this.anims.generateFrameNumbers('boy_galaxy', { start: 0, end: 98 }),
-            frameRate: 30,
+            key: 'boy_chinese_anim',
+            frames: this.anims.generateFrameNumbers('boy_chinese', { start: 0, end: 19 }),
+            frameRate: 16,
             repeat: -1
         });
 
         this.anims.create({
-            key: 'boy_transition_anim',  // Name you will use in other scenes
-            frames: this.anims.generateFrameNumbers('boy_transition', { start: 0, end: 98 }),
-            frameRate: 30,
+            key: 'boy_transition_anim',
+            frames: this.anims.generateFrameNumbers('boy_transition', { start: 0, end: 63 }),
+            frameRate: 16,
             repeat: 0
         });
 
         this.anims.create({
             key: 'girl_galaxy_anim',
-            frames: this.anims.generateFrameNumbers('girl_galaxy', { start: 0, end: 98 }),
-            frameRate: 30,
+            frames: this.anims.generateFrameNumbers('girl_galaxy', { start: 0, end: 19 }),
+            frameRate: 16,
             repeat: -1
         });
 
         this.anims.create({
             key: 'girl_chinese_anim',
-            frames: this.anims.generateFrameNumbers('girl_chinese', { start: 0, end: 98 }),
-            frameRate: 30,
+            frames: this.anims.generateFrameNumbers('girl_chinese', { start: 0, end: 99 }),
+            frameRate: 16,
             repeat: -1
         });
 
         this.anims.create({
-            key: 'girl_transition_anim',  // Name you will use in other scenes
-            frames: this.anims.generateFrameNumbers('girl_transition', { start: 0, end: 98 }),
-            frameRate: 30,
+            key: 'girl_transition_anim',
+            frames: this.anims.generateFrameNumbers('girl_transition', { start: 0, end: 31 }),
+            frameRate: 16,
             repeat: 0
         });
-
-
     }
 
 }

@@ -243,6 +243,8 @@ export class GameScene_2 extends BaseGameScene {
         this.lastDirection = direction;
         this.isMoving = true;
 
+        // Girl right-walk sheet faces left, so flip it while walking right
+        this.player.setFlipX(this.genderKey === 'girl' && direction === 'right');
         this.player.anims.play(walkAnimKey, true);
 
         // Smoothly tween the position since arcade physics velocity isn't being used
@@ -254,6 +256,7 @@ export class GameScene_2 extends BaseGameScene {
             ease: 'Linear',
             onComplete: () => {
                 this.isMoving = false;
+                this.player.setFlipX(false);
                 this.player.anims.play(stopAnimKey, true);
 
                 this.checkCoinCollision();
@@ -444,101 +447,30 @@ export class GameScene_2 extends BaseGameScene {
     }
 
     createAnimations() {
-        // Skip if already created (e.g. on scene restart)
-        if (this.anims.exists('boy_backstop_anim')) return;
+        const prefix = this.gender === 'M' ? 'boy' : 'girl';
+        if (this.anims.exists(`${prefix}_backstop_anim`)) return;
 
-        // Boy animations
-        this.anims.create({
-            key: 'boy_backstop_anim',
-            frames: this.anims.generateFrameNumbers('boy_backstop', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_backwalking_anim',
-            frames: this.anims.generateFrameNumbers('boy_backwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_frontstop_anim',
-            frames: this.anims.generateFrameNumbers('boy_frontstop', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_frontwalking_anim',
-            frames: this.anims.generateFrameNumbers('boy_frontwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_leftstop_anim',
-            frames: this.anims.generateFrameNumbers('boy_leftstop', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_leftwalking_anim',
-            frames: this.anims.generateFrameNumbers('boy_leftwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_rightstop_anim',
-            frames: this.anims.generateFrameNumbers('boy_rightstop', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_rightwalking_anim',
-            frames: this.anims.generateFrameNumbers('boy_rightwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
+        const lastFrame = (key) => {
+            const texture = this.textures.get(key);
+            if (!texture || !texture.getSourceImage) return 0;
+            const src = texture.getSourceImage();
+            const cols = Math.max(1, Math.floor(src.width / 105));
+            const rows = Math.max(1, Math.floor(src.height / 105));
+            return cols * rows - 1;
+        };
 
-        // Girl animations
-        this.anims.create({
-            key: 'girl_backstop_anim',
-            frames: this.anims.generateFrameNumbers('girl_backstop', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'girl_backwalking_anim',
-            frames: this.anims.generateFrameNumbers('girl_backwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'girl_frontwalking_anim',
-            frames: this.anims.generateFrameNumbers('girl_frontwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'girl_leftstop_anim',
-            frames: this.anims.generateFrameNumbers('girl_leftstop', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'girl_leftwalking_anim',
-            frames: this.anims.generateFrameNumbers('girl_leftwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'girl_rightstop_anim',
-            frames: this.anims.generateFrameNumbers('girl_rightstop', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'girl_rightwalking_anim',
-            frames: this.anims.generateFrameNumbers('girl_rightwalking', { start: 0, end: 66 }),
-            frameRate: 30,
-            repeat: -1
-        });
+        const makeAnim = (name) => {
+            const key = `${prefix}_${name}`;
+            if (!this.textures.exists(key)) return;
+            this.anims.create({
+                key: `${key}_anim`,
+                frames: this.anims.generateFrameNumbers(key, { start: 0, end: lastFrame(key) }),
+                frameRate: 30,
+                repeat: -1
+            });
+        };
+
+        ['backstop', 'backwalking', 'frontstop', 'frontwalking',
+            'leftstop', 'leftwalking', 'rightstop', 'rightwalking'].forEach(makeAnim);
     }
 }
