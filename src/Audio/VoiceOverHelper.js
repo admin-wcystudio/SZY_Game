@@ -58,7 +58,6 @@ export default class VoiceOverHelper {
 
     static STEMS = [
         'Game_1/game1_npc_box1',
-        'Game_1/game1_npc_box2',
         'Game_1/game1_npc_boy_box2',
         'Game_1/game1_npc_girl_box2',
         'Game_1/game1_npc_box3',
@@ -77,7 +76,6 @@ export default class VoiceOverHelper {
         'Game_2/game2_npc_box4',
         'Game_2/game2_npc_box5',
         'Game_3/game3_npc_box1',
-        'Game_3/game3_npc_box2',
         'Game_3/game3_npc_boy_box2',
         'Game_3/game3_npc_girl_box2',
         'Game_3/game3_npc_box3',
@@ -105,7 +103,6 @@ export default class VoiceOverHelper {
         'Game_5/game5_npc_box10',
         'Game_5/game5_npc_box11',
         'Game_6/game6_npc_box1',
-        'Game_6/game6_npc_box2',
         'Game_6/game6_npc_boy_box2',
         'Game_6/game6_npc_girl_box2',
         'Game_6/game6_npc_boy_box3',
