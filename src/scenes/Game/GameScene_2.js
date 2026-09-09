@@ -29,7 +29,7 @@ export class GameScene_2 extends BaseGameScene {
         this.load.image('down_btn', `${path}game2_down_button.png`);
         this.load.image('down_btn_click', `${path}game2_down_button_click.png`);
 
-        this.gender = 'M';
+        this.gender = 'F';
         if (localStorage.getItem('player')) {
             this.gender = JSON.parse(localStorage.getItem('player')).gender;
         }
@@ -231,6 +231,8 @@ export class GameScene_2 extends BaseGameScene {
                 stopAnimKey = this.gender === 'M'
                     ? `${this.genderKey}_frontstop_anim`
                     : `${this.genderKey}_frontwalking_anim`;
+
+            default:
                 break;
         }
 
@@ -243,8 +245,6 @@ export class GameScene_2 extends BaseGameScene {
         this.lastDirection = direction;
         this.isMoving = true;
 
-        // Girl right-walk sheet faces left, so flip it while walking right
-        this.player.setFlipX(this.genderKey === 'girl' && direction === 'right');
         this.player.anims.play(walkAnimKey, true);
 
         // Smoothly tween the position since arcade physics velocity isn't being used
@@ -483,7 +483,6 @@ export class GameScene_2 extends BaseGameScene {
 
     createAnimations() {
         const prefix = this.gender === 'M' ? 'boy' : 'girl';
-        if (this.anims.exists(`${prefix}_backstop_anim`)) return;
 
         const lastFrame = (key) => {
             const texture = this.textures.get(key);
@@ -494,18 +493,46 @@ export class GameScene_2 extends BaseGameScene {
             return cols * rows - 1;
         };
 
-        const makeAnim = (name) => {
+        // Per-animation frame range. Omit `end` to use the full sheet.
+        const animFrames = this.gender === 'M' ? {
+            backstop: { start: 0 },
+            backwalking: { start: 0 },
+            frontstop: { start: 0 },
+            frontwalking: { start: 0 },
+            leftstop: { start: 0 },
+            leftwalking: { start: 0 },
+            rightstop: { start: 0 },
+            rightwalking: { start: 0 }
+        } : {
+            backstop: { start: 0, end: 0 },
+            backwalking: { start: 0, end: 10 },
+            frontstop: { start: 0, end: 0 },
+            frontwalking: { start: 0, end: 9 },
+            leftstop: { start: 0, end: 0 },
+            leftwalking: { start: 0, end: 9 },
+            rightstop: { start: 0, end: 0 },
+            rightwalking: { start: 30, end: 50 }
+        };
+
+        const makeAnim = (name, range = {}) => {
             const key = `${prefix}_${name}`;
+            const animKey = `${key}_anim`;
             if (!this.textures.exists(key)) return;
+            if (this.anims.exists(animKey)) this.anims.remove(animKey);
+
+            const max = lastFrame(key);
+            const start = Phaser.Math.Clamp(range.start ?? 0, 0, max);
+            const end = Phaser.Math.Clamp(range.end ?? max, start, max);
+            const isStop = name.endsWith('stop');
+
             this.anims.create({
-                key: `${key}_anim`,
-                frames: this.anims.generateFrameNumbers(key, { start: 0, end: lastFrame(key) }),
-                frameRate: 24,
-                repeat: -1
+                key: animKey,
+                frames: this.anims.generateFrameNumbers(key, { start, end }),
+                frameRate: range.frameRate ?? (isStop ? 1 : 24),
+                repeat: range.repeat ?? (isStop ? 0 : -1)
             });
         };
 
-        ['backstop', 'backwalking', 'frontstop', 'frontwalking',
-            'leftstop', 'leftwalking', 'rightstop', 'rightwalking'].forEach(makeAnim);
+        Object.entries(animFrames).forEach(([name, range]) => makeAnim(name, range));
     }
 }
