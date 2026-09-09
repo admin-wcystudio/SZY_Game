@@ -1,4 +1,5 @@
 import { CustomButton, CustomButton2 } from './Button.js';
+import VoiceOverHelper from '../Audio/VoiceOverHelper.js';
 /**
  * BASE PANEL CLASS
  * Provides common functionality for all game overlays
@@ -461,6 +462,7 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
 
         const dialogImg = this.scene.add.image(0, 350, dialogKey).setInteractive({ useHandCursor: true });
         this.add(dialogImg);
+        VoiceOverHelper.playBubbleVo(this.scene, dialogKey, false);
 
         dialogImg.once('pointerdown', () => {
             dialogImg.destroy();
@@ -469,6 +471,7 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
             if (characterDialogKey) {
                 this.showCharacterDialog(characterDialogKey);
             } else {
+                VoiceOverHelper.stop(this.scene);
                 this.nextQuestion();
             }
         });
@@ -477,9 +480,11 @@ export class QuestionPanel extends Phaser.GameObjects.Container {
     showCharacterDialog(characterDialogKey) {
         const charImg = this.scene.add.image(0, 350, characterDialogKey).setInteractive({ useHandCursor: true });
         this.add(charImg);
+        VoiceOverHelper.playBubbleVo(this.scene, characterDialogKey, true);
 
         charImg.once('pointerdown', () => {
             charImg.destroy();
+            VoiceOverHelper.stop(this.scene);
             this.nextQuestion();
         });
     }

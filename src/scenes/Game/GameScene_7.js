@@ -3,6 +3,7 @@ import BaseGameScene from './BaseGameScene.js';
 import { CustomButton } from '../../UI/Button.js';
 import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
 import GameManager from '../GameManager.js';
+import VoiceOverHelper from '../../Audio/VoiceOverHelper.js';
 
 export class GameScene_7 extends BaseGameScene {
     constructor() {
@@ -38,6 +39,9 @@ export class GameScene_7 extends BaseGameScene {
         this.load.image('game7_boy_feedback', `${path}game7_npc_boy_box6.png`);
         this.load.image('game7_girl_feedback', `${path}game7_npc_girl_box6.png`);
         this.load.image('game7_npc_box_feedback', `${path}game7_npc_box7.png`);
+
+        VoiceOverHelper.preload(this);
+        VoiceOverHelper.preloadImages(this, VoiceOverHelper.inGameImageKeys(7));
 
         this.load.image('final_preview', `${path}game7_final_preview.png`);
         this.load.image('select_area', `${path}game7_select_area.png`);
@@ -313,6 +317,7 @@ export class GameScene_7 extends BaseGameScene {
 
         this.dialog1 = this.add.image(this.centerX, this.centerY + 300, 'game7_npc_box_win1')
             .setDepth(101).setInteractive({ useHandCursor: true });
+        VoiceOverHelper.playBubbleVo(this, 'game7_npc_box1', false);
 
 
         this.dialog1.on('pointerdown', () => {
@@ -320,14 +325,17 @@ export class GameScene_7 extends BaseGameScene {
 
             this.dialog2 = this.add.image(this.centerX, this.centerY + 300, 'game7_npc_box_win2')
                 .setDepth(101).setInteractive({ useHandCursor: true });
+            VoiceOverHelper.playBubbleVo(this, 'game7_npc_box2', false);
 
             this.dialog2.on('pointerdown', () => {
                 this.dialog2.destroy();
                 this.feedback = this.add.image(this.centerX, this.centerY + 300, `game7_${this.genderKey}_feedback`)
                     .setDepth(101).setInteractive({ useHandCursor: true });
+                VoiceOverHelper.playBubbleVo(this, `game7_npc_${this.genderKey}_box6`, true);
 
                 this.feedback.on('pointerdown', () => {
                     this.feedback.destroy();
+                    VoiceOverHelper.stop(this);
                     this.playVideoFeedback();
                 });
 
@@ -343,9 +351,11 @@ export class GameScene_7 extends BaseGameScene {
         this.time.delayedCall(500, () => {
             this.feedback2 = this.add.image(this.centerX, this.centerY + 300, 'game7_npc_box_feedback')
                 .setDepth(101).setInteractive({ useHandCursor: true });
+            VoiceOverHelper.playBubbleVo(this, 'game7_npc_box7', false);
 
             this.feedback2.on('pointerdown', () => {
                 this.feedback2.destroy();
+                VoiceOverHelper.stop(this);
                 this.showObjectPanel();
             });
         });

@@ -3,6 +3,7 @@ import BaseGameScene from './BaseGameScene.js';
 import { CustomButton } from '../../UI/Button.js';
 import { CustomPanel, CustomFailPanel, QuestionPanel } from '../../UI/Panel.js';
 import GameManager from '../GameManager.js';
+import VoiceOverHelper from '../../Audio/VoiceOverHelper.js';
 
 export class GameScene_5 extends BaseGameScene {
     constructor() {
@@ -19,23 +20,24 @@ export class GameScene_5 extends BaseGameScene {
 
         // NPC dialogue boxes (in ascending order)
         this.load.image('game5_npc_box1', `${path}game5_npc_box1.png`);
-        this.load.image('game5_npc_box3', `${path}game5_npc_box4.png`);
-        this.load.image('game5_npc_box4', `${path}game5_npc_box6.png`);
-        this.load.image('game5_npc_box5', `${path}game5_npc_box8.png`);
+        this.load.image('game5_npc_box4', `${path}game5_npc_box4.png`);
+        this.load.image('game5_npc_box6', `${path}game5_npc_box6.png`);
+        this.load.image('game5_npc_box8', `${path}game5_npc_box8.png`);
 
         this.load.image('game5_npc_box_win', `${path}game5_npc_box10.png`);
         this.load.image('game5_npc_box_tryagain', `${path}game5_npc_box11.png`);
-        this.load.image('game5_npc_box_intro', `${path}game5_npc_box3.png`);
+        this.load.image('game5_npc_box_intro', `${path}game5_npc_box1.png`);
 
-        this.load.image('game5_boy_npc_box1', `${path}game5_npc_boy_box4.png`);
-        this.load.image('game5_boy_npc_box2', `${path}game5_npc_boy_box5.png`);
-        this.load.image('game5_boy_npc_box3', `${path}game5_npc_boy_box7.png`);
-        this.load.image('game5_boy_npc_box4', `${path}game5_npc_boy_box9.png`);
+        this.load.image('game5_npc_boy_box5', `${path}game5_npc_boy_box5.png`);
+        this.load.image('game5_npc_boy_box7', `${path}game5_npc_boy_box7.png`);
+        this.load.image('game5_npc_boy_box9', `${path}game5_npc_boy_box9.png`);
 
-        this.load.image('game5_girl_npc_box1', `${path}game5_npc_girl_box2.png`);
-        this.load.image('game5_girl_npc_box2', `${path}game5_npc_girl_box5.png`);
-        this.load.image('game5_girl_npc_box3', `${path}game5_npc_girl_box7.png`);
-        this.load.image('game5_girl_npc_box4', `${path}game5_npc_girl_box9.png`);
+        this.load.image('game5_npc_girl_box5', `${path}game5_npc_girl_box5.png`);
+        this.load.image('game5_npc_girl_box7', `${path}game5_npc_girl_box7.png`);
+        this.load.image('game5_npc_girl_box9', `${path}game5_npc_girl_box9.png`);
+
+        VoiceOverHelper.preload(this);
+        VoiceOverHelper.preloadImages(this, VoiceOverHelper.inGameImageKeys(5));
 
 
         // UI buttons
@@ -90,22 +92,22 @@ export class GameScene_5 extends BaseGameScene {
                 content: 'game5_q1',
                 options: ['game5_q1_a_button', 'game5_q1_b_button', 'game5_q1_c_button', 'game5_q1_d_button'],
                 answer: 0,
-                nextDialog: 'game5_npc_box3',
-                characterDialog: `game5_${this.genderKey}_npc_box2`
+                nextDialog: 'game5_npc_box4',
+                characterDialog: `game5_npc_${this.genderKey}_box5`
             },
             {
                 content: 'game5_q2',
                 options: ['game5_q2_a_button', 'game5_q2_b_button', 'game5_q2_c_button', 'game5_q2_d_button'],
                 answer: 3,
-                nextDialog: 'game5_npc_box4',
-                characterDialog: `game5_${this.genderKey}_npc_box3`
+                nextDialog: 'game5_npc_box6',
+                characterDialog: `game5_npc_${this.genderKey}_box7`
             },
             {
                 content: 'game5_q3',
                 options: ['game5_q3_a_button', 'game5_q3_b_button', 'game5_q3_c_button', 'game5_q3_d_button'],
                 answer: 1,
-                nextDialog: 'game5_npc_box5',
-                characterDialog: `game5_${this.genderKey}_npc_box4`
+                nextDialog: 'game5_npc_box8',
+                characterDialog: `game5_npc_${this.genderKey}_box9`
             }
         ]
 

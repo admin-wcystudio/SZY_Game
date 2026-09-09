@@ -2,6 +2,7 @@ import BaseGameScene from './BaseGameScene.js';
 import { CustomButton } from '../../UI/Button.js';
 import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
 import GameManager from '../GameManager.js';
+import VoiceOverHelper from '../../Audio/VoiceOverHelper.js';
 
 export class GameScene_1 extends BaseGameScene {
     constructor() {
@@ -24,6 +25,9 @@ export class GameScene_1 extends BaseGameScene {
         this.load.image('game1_npc_box_girl_win3', `${path}game1_npc_girl_box6.png`);
 
         this.load.image('game1_npc_box_tryagain', `${path}game1_npc_box7.png`);
+
+        VoiceOverHelper.preload(this);
+        VoiceOverHelper.preloadImages(this, VoiceOverHelper.inGameImageKeys(1));
 
         this.gender = 'F';
         if (localStorage.getItem('player')) {
@@ -298,22 +302,7 @@ export class GameScene_1 extends BaseGameScene {
     }
 
     showWin() {
-
-        // Second: Show generic win2 bubble
-        this.bubbleImage2 = this.add.image(this.centerX, this.cameras.main.height * 0.8, 'game1_npc_box_win')
-            .setDepth(555).setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => {
-                this.bubbleImage2.destroy();
-
-                // Third: Show gender-specific win3 bubble
-                this.bubbleImage3 = this.add.image(this.centerX, this.cameras.main.height * 0.8, `game1_npc_box_${this.genderKey}_win3`)
-                    .setDepth(555).setInteractive({ useHandCursor: true })
-                    .on('pointerdown', () => {
-                        this.bubbleImage3.destroy();
-                        this.showObjectPanel();
-                    });
-            });
-
+        this.showObjectPanel();
     }
 
     showObjectPanel() {

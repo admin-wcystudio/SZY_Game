@@ -2,6 +2,7 @@ import BaseGameScene from './BaseGameScene.js';
 import { CustomButton } from '../../UI/Button.js';
 import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
 import GameManager from '../GameManager.js';
+import VoiceOverHelper from '../../Audio/VoiceOverHelper.js';
 
 export class GameScene_2 extends BaseGameScene {
     constructor() {
@@ -18,6 +19,8 @@ export class GameScene_2 extends BaseGameScene {
         this.load.image('game2_npc_box_intro', `${path}game2_npc_box3.png`);
         this.load.image('game2_npc_box_win', `${path}game2_npc_box4.png`);
         this.load.image('game2_npc_box_tryagain', `${path}game2_npc_box5.png`);
+        VoiceOverHelper.preload(this);
+        VoiceOverHelper.preloadImages(this, VoiceOverHelper.inGameImageKeys(2));
         this.load.image('pen', `${path}game2_mazeobject1.png`);
         this.load.image('coin', `${path}game2_mazeobject2.png`);
 

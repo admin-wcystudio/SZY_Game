@@ -2,6 +2,7 @@ import { CustomButton } from '../../UI/Button.js';
 import UIHelper from '../../UI/UIHelper.js';
 import GameManager from '../GameManager.js';
 import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
+import VoiceOverHelper from '../../Audio/VoiceOverHelper.js';
 
 /**
  * Enhanced BaseGameScene
@@ -86,6 +87,8 @@ export default class BaseGameScene extends Phaser.Scene {
         this.playerGender = player.gender; // Store gender for use in win bubbles
         const descriptionPages = this._formatDescription(descriptionKey);
 
+        this.events.once('shutdown', () => VoiceOverHelper.stop(this));
+
         this.gameUI = UIHelper.createGameCommonUI(this, bgKey,
             descriptionPages, this.targetRounds, this.config.depthUI);
 
@@ -110,95 +113,35 @@ export default class BaseGameScene extends Phaser.Scene {
      * @param {object} options - { autoCloseMs: number, onClose: function }
      */
     showBubble(type, gender = null, options = {}) {
-        if (this.currentBubbleImg) {
-            this.currentBubbleImg.destroy();
-            this.currentBubbleImg = null;
-        }
-        const centerX = this.cameras.main.width / 2;
-        // Adaptive Y: 20% from bottom for win/tryagain, 80% for intro
-        const centerY = (type === 'intro') ? this.cameras.main.height * 0.8 : this.cameras.main.height * 0.8;
-        const prefix = this.sceneIndex !== -1 ? `game${this.sceneIndex}` : 'game1';
-        const bubbleMapping = {
-            'intro': `${prefix}_npc_box_intro`,
-            'win': `${prefix}_npc_box_win`,
-            'win_gender': `${prefix}_npc_box_win_gender`, // optional
-            'gameWin': `${prefix}_npc_box_win`, // fallback to win bubble, can customize if needed
-            'tryagain': `${prefix}_npc_box_tryagain`,
-            'tryagain2': `${prefix}_npc_box_tryagain2`,
-            'lock': `${prefix}_npc_box_lock`
-        };
-
-        let targetKey = bubbleMapping[type];
-
-        // Check for gender-specific or round-specific win bubble
-        if (type === 'win' || type === 'gameWin') {
-            // First priority: gender-specific win bubble (e.g., game1_npc_box_boy_win)
-            if (gender) {
-                const genderKey = gender === 'M' ? 'boy' : 'girl';
-                const genderWinKey = `${prefix}_npc_box_${genderKey}_win`;
-                if (this.textures.exists(genderWinKey)) {
-                    targetKey = genderWinKey;
-                }
-            }
-            // Second priority: round-specific win bubble (e.g., game6_npc_box_win_round2)
-            if (targetKey === bubbleMapping[type]) {
-                const specificRoundKey = `${prefix}_npc_box_win_round${this.roundIndex + 1}`;
-                if (this.textures.exists(specificRoundKey)) {
-                    targetKey = specificRoundKey;
-                }
-            }
+        if (type === 'noBubble') {
+            this.onWinBubbleClose();
+            return;
         }
 
-        this.currentBubbleImg = this.add.image(centerX, centerY, targetKey)
-            .setDepth(this.config.depthBubble)
-            .setScrollFactor(0)
-            .setInteractive({ useHandCursor: true });
-        this.tweens.add({
-            targets: this.currentBubbleImg,
-            scale: { from: 0.5, to: 1 },
-            duration: 200,
-            ease: 'Back.easeOut'
-        });
-        let closed = false;
-        const closeBubble = () => {
-            if (closed) return;
-            closed = true;
-            if (this.currentBubbleImg) {
-                this.currentBubbleImg.destroy();
-                this.currentBubbleImg = null;
-            }
-            if (options.onClose) options.onClose();
-        };
+        const config = VoiceOverHelper.GAME_DIALOGUE[this.sceneIndex] || {};
+        let keys = [];
         if (type === 'intro') {
-            this.currentBubbleImg.once('pointerdown', () => {
-                closeBubble();
-                this.startGame();
-            });
-        } else if (type === 'win') {
-            this.currentBubbleImg.once('pointerdown', () => {
-                if (this.successVideo) this.successVideo.destroy();
-                closeBubble();
-                this.onWinBubbleClose();
-            });
-            if (options.autoCloseMs) {
-                this.time.delayedCall(options.autoCloseMs, () => {
-                    if (!closed) {
-                        closeBubble();
-                        this.onWinBubbleClose();
-                    }
-                });
-            }
+            keys = [...(config.intro || [])];
+        } else if (type === 'win' || type === 'gameWin') {
+            keys = VoiceOverHelper.toArray(config.win);
         } else if (type === 'tryagain' || type === 'tryagain2') {
-            this.currentBubbleImg.once('pointerdown', () => {
-                closeBubble();
+            keys = VoiceOverHelper.toArray(config.fail);
+        } else if (type === 'lock') {
+            keys = [...(config.streetLock || [])];
+        }
 
-                // Logic: 
-                // 1. If isAllowRoundFail (consume rounds as chances):
-                //    - If we have rounds left, go nextRound().
-                //    - Else, Fail Panel.
-                // 2. Else (original sequential logic, or separate failChances logic):
-                //    - Default to Fail Panel immediately for now unless failChances used.
+        if (keys.length === 0) {
+            const semantic = this._semanticBubbleKey(type, gender);
+            if (semantic) keys = [semantic];
+        }
 
+        this.showDialogueSequence(keys, () => {
+            if (type === 'intro') {
+                this.startGame();
+            } else if (type === 'win' || type === 'gameWin') {
+                if (this.successVideo) this.successVideo.destroy();
+                this.onWinBubbleClose();
+            } else if (type === 'tryagain' || type === 'tryagain2') {
                 if (this.isAllowRoundFail) {
                     if (this.roundIndex + 1 < this.targetRounds) {
                         this.nextRound();
@@ -212,22 +155,117 @@ export default class BaseGameScene extends Phaser.Scene {
                         this.showFailPanel();
                     });
                 }
-            });
-
-        } else if (type === 'lock') {
-            this.currentBubbleImg.once('pointerdown', () => {
-                closeBubble();
+            } else if (type === 'lock') {
                 GameManager.backToMainStreet(this);
-            });
-
-            if (options.autoCloseMs) {
-                this.time.delayedCall(options.autoCloseMs, () => {
-                    closeBubble();
-                    GameManager.backToMainStreet(this);
-                });
             }
-        } else if (type === 'noBubble') {
-            this.onWinBubbleClose();
+            if (options.onClose) options.onClose();
+        }, options);
+    }
+
+    _semanticBubbleKey(type, gender = null) {
+        const prefix = this.sceneIndex !== -1 ? `game${this.sceneIndex}` : 'game1';
+        const bubbleMapping = {
+            'intro': `${prefix}_npc_box_intro`,
+            'win': `${prefix}_npc_box_win`,
+            'gameWin': `${prefix}_npc_box_win`,
+            'tryagain': `${prefix}_npc_box_tryagain`,
+            'tryagain2': `${prefix}_npc_box_tryagain2`,
+            'lock': `${prefix}_npc_box_lock`
+        };
+        let targetKey = bubbleMapping[type];
+        if (type === 'win' || type === 'gameWin') {
+            if (gender) {
+                const genderKey = gender === 'M' ? 'boy' : 'girl';
+                const genderWinKey = `${prefix}_npc_box_${genderKey}_win`;
+                if (this.textures.exists(genderWinKey)) {
+                    targetKey = genderWinKey;
+                }
+            }
+            if (targetKey === bubbleMapping[type]) {
+                const specificRoundKey = `${prefix}_npc_box_win_round${this.roundIndex + 1}`;
+                if (this.textures.exists(specificRoundKey)) {
+                    targetKey = specificRoundKey;
+                }
+            }
+        }
+        return VoiceOverHelper.resolveTexture(this, targetKey) || (this.textures.exists(targetKey) ? targetKey : null);
+    }
+
+    showDialogueSequence(keys, onComplete, options = {}) {
+        VoiceOverHelper.stop(this);
+        if (this.currentBubbleImg) {
+            this.currentBubbleImg.destroy();
+            this.currentBubbleImg = null;
+        }
+
+        if (!keys || keys.length === 0) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height * 0.8;
+        let index = 0;
+        let closed = false;
+
+        const closeSequence = () => {
+            if (closed) return;
+            closed = true;
+            VoiceOverHelper.stop(this);
+            if (this.currentBubbleImg) {
+                this.currentBubbleImg.destroy();
+                this.currentBubbleImg = null;
+            }
+            if (onComplete) onComplete();
+        };
+
+        const nextAvailableKey = () => {
+            while (index < keys.length) {
+                const textureKey = VoiceOverHelper.resolveTexture(this, keys[index]);
+                if (textureKey) return textureKey;
+                index++;
+            }
+            return null;
+        };
+
+        const showCurrent = () => {
+            const textureKey = nextAvailableKey();
+            if (!textureKey) {
+                closeSequence();
+                return;
+            }
+            if (!this.currentBubbleImg) {
+                this.currentBubbleImg = this.add.image(centerX, centerY, textureKey)
+                    .setDepth(this.config.depthBubble)
+                    .setScrollFactor(0)
+                    .setInteractive({ useHandCursor: true });
+                this.tweens.add({
+                    targets: this.currentBubbleImg,
+                    scale: { from: 0.5, to: 1 },
+                    alpha: { from: 0, to: 1 },
+                    duration: 200,
+                    ease: 'Back.easeOut'
+                });
+                this.currentBubbleImg.on('pointerdown', () => {
+                    index++;
+                    if (index < keys.length) {
+                        showCurrent();
+                    } else {
+                        closeSequence();
+                    }
+                });
+            } else {
+                this.currentBubbleImg.setTexture(textureKey);
+            }
+            VoiceOverHelper.playBubbleVo(this, textureKey);
+        };
+
+        showCurrent();
+
+        if (options.autoCloseMs) {
+            this.time.delayedCall(options.autoCloseMs, () => {
+                if (!closed) closeSequence();
+            });
         }
     }
 
@@ -432,6 +470,8 @@ export default class BaseGameScene extends Phaser.Scene {
         }
         this._setupTimer();
 
+        VoiceOverHelper.stop(this);
+
         // 3. Clear bubbles and feedback labels
         if (this.currentBubbleImg) {
             this.currentBubbleImg.destroy();
@@ -521,6 +561,7 @@ export default class BaseGameScene extends Phaser.Scene {
      * Cleans up the scene to prevent memory leaks
      */
     shutdown() {
+        VoiceOverHelper.stop(this);
         if (this.gameTimer) this.gameTimer.stop();
         this.tweens.killAll();
         this.events.off('game-start');

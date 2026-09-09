@@ -2,6 +2,7 @@ import BaseGameScene from './BaseGameScene.js';
 import { CustomButton } from '../../UI/Button.js';
 import { CustomPanel, CustomFailPanel } from '../../UI/Panel.js';
 import GameManager from '../GameManager.js';
+import VoiceOverHelper from '../../Audio/VoiceOverHelper.js';
 
 
 export class GameScene_6 extends BaseGameScene {
@@ -26,11 +27,14 @@ export class GameScene_6 extends BaseGameScene {
         this.load.image('game6_npc_box_win', `${path}game6_npc_box4.png`);
         this.load.image('game6_npc_box_tryagain', `${path}game6_npc_box7.png`);
 
-        this.load.image('game6_boy_npc_box1', `${path}game6_npc_boy_box3.png`);
-        this.load.image('game5_boy_npc_box2', `${path}game6_npc_boy_box5.png`);
+        this.load.image('game6_npc_boy_box3', `${path}game6_npc_boy_box3.png`);
+        this.load.image('game6_npc_boy_box5', `${path}game6_npc_boy_box5.png`);
 
-        this.load.image('game6_girl_npc_box1', `${path}game6_npc_girl_box3.png`);
-        this.load.image('game6_girl_npc_box2', `${path}game6_npc_girl_box5.png`);
+        this.load.image('game6_npc_girl_box3', `${path}game6_npc_girl_box3.png`);
+        this.load.image('game6_npc_girl_box5', `${path}game6_npc_girl_box5.png`);
+
+        VoiceOverHelper.preload(this);
+        VoiceOverHelper.preloadImages(this, VoiceOverHelper.inGameImageKeys(6));
 
 
         for (let i = 1; i <= 8; i++) {
