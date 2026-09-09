@@ -254,6 +254,10 @@ export class GameScene_2 extends BaseGameScene {
             y: targetY,
             duration: 250,
             ease: 'Linear',
+            onUpdate: () => {
+                this.checkCoinCollision();
+                this.checkPenCollection();
+            },
             onComplete: () => {
                 this.isMoving = false;
                 this.player.setFlipX(false);
@@ -293,13 +297,26 @@ export class GameScene_2 extends BaseGameScene {
         return colliding;
     }
 
-    /** Check collision with coins using distance */
+    isOverlappingItem(item) {
+        if (!this.player || !item?.visible || item.collected) return false;
+        const hitSize = 36;
+        const feetX = this.player.x;
+        const feetY = this.player.y + 40;
+        const playerBounds = new Phaser.Geom.Rectangle(
+            feetX - hitSize / 2,
+            feetY - hitSize / 2,
+            hitSize,
+            hitSize
+        );
+        return Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, item.getBounds());
+    }
+
     checkCoinCollision() {
-        const hitRadius = 80;
+        if (!this.isGameActive) return;
         for (const coin of this.coins) {
-            if (!coin.visible) continue;
-            const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, coin.x, coin.y);
-            if (dist < hitRadius) {
+            if (!coin.visible || coin.collected) continue;
+            if (this.isOverlappingItem(coin)) {
+                coin.collected = true;
                 coin.setVisible(false);
                 this.lives--;
                 console.log(`[GameScene_2] Coin hit! Lives: ${this.lives}`);
@@ -309,22 +326,40 @@ export class GameScene_2 extends BaseGameScene {
         }
     }
 
-    /** Check collection of pens using distance */
     checkPenCollection() {
-        const pickupRadius = 80;
+        if (!this.isGameActive || this.gameState === 'gameWin') return;
         for (const pen of this.pens) {
-            if (!pen.visible) continue;
-            const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, pen.x, pen.y);
-            if (dist < pickupRadius) {
-                pen.setVisible(false);
-                this.collectedPens++;
-                console.log(`[GameScene_2] Pen collected! (${this.collectedPens}/3)`);
-                if (this.collectedPens >= 3) {
-                    console.log('[GameScene_2] 3 pens collected! You win!');
-                    this.onRoundWin();
-                }
-                return;
+            if (!pen.visible || pen.collected) continue;
+            if (this.isOverlappingItem(pen)) {
+                this.collectPen(pen);
             }
+        }
+    }
+
+    collectPen(pen) {
+        if (!pen || pen.collected) return;
+        pen.collected = true;
+        this.collectedPens++;
+        console.log(`[GameScene_2] Pen collected! (${this.collectedPens}/${this.targetRounds})`);
+
+        this.tweens.add({
+            targets: pen,
+            scale: 1.4,
+            alpha: 0,
+            y: pen.y - 40,
+            duration: 220,
+            ease: 'Back.easeIn',
+            onComplete: () => {
+                pen.setVisible(false);
+                pen.destroy();
+            }
+        });
+
+        this.updateRoundUI(true);
+        if (this.collectedPens >= this.targetRounds) {
+            this.onRoundWin();
+        } else {
+            this.roundIndex++;
         }
     }
 
@@ -465,7 +500,7 @@ export class GameScene_2 extends BaseGameScene {
             this.anims.create({
                 key: `${key}_anim`,
                 frames: this.anims.generateFrameNumbers(key, { start: 0, end: lastFrame(key) }),
-                frameRate: 30,
+                frameRate: 24,
                 repeat: -1
             });
         };
