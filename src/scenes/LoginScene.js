@@ -68,7 +68,7 @@ export class LoginScene extends Phaser.Scene {
 
 
         //login page
-        const loginPath = 'assets/Login/';
+        const loginPath = 'assets/images/Login/';
         this.load.video('login_bg_video', loginPath + 'choosepage_bg.mp4');
 
         this.load.image('login_boy_btn', loginPath + 'choosepage_boy_button.png');
@@ -185,14 +185,12 @@ export class LoginScene extends Phaser.Scene {
         this.boySprite = this.add.sprite(620, 540, 'boy_galaxy')
             .setDepth(10)
             .setScrollFactor(0);
-        this.boySprite.play('boy_galaxy_anim');
-        this.fitLoginSprite(this.boySprite);
+        this.playLoginAnim(this.boySprite, 'boy_galaxy_anim');
 
         this.girlSprite = this.add.sprite(1300, 560, 'girl_galaxy')
             .setDepth(10)
             .setScrollFactor(0);
-        this.girlSprite.play('girl_galaxy_anim');
-        this.fitLoginSprite(this.girlSprite);
+        this.playLoginAnim(this.girlSprite, 'girl_galaxy_anim');
 
 
         this.add.image(340, 350, 'bubble1').setDepth(11);
@@ -296,25 +294,26 @@ export class LoginScene extends Phaser.Scene {
         sprite.setScale(700 / frame.width, 900 / frame.height);
     }
 
+    playLoginAnim(sprite, key, onComplete) {
+        if (!sprite || !this.anims.exists(key)) return false;
+        const anim = this.anims.get(key);
+        if (!anim || !anim.frames?.length || !anim.frames[0]?.frame) return false;
+        if (onComplete) sprite.once('animationcomplete', onComplete);
+        sprite.play(key);
+        this.fitLoginSprite(sprite);
+        return true;
+    }
+
     switchAnimation() {
         if (this.selectedGender === 'M') {
-            this.girlSprite.play('girl_galaxy_anim');
-            this.fitLoginSprite(this.girlSprite);
-            this.boySprite.play('boy_transition_anim');
-            this.fitLoginSprite(this.boySprite);
-            this.boySprite.once('animationcomplete', () => {
-                this.boySprite.play('boy_chinese_anim');
-                this.fitLoginSprite(this.boySprite);
+            this.playLoginAnim(this.girlSprite, 'girl_galaxy_anim');
+            this.playLoginAnim(this.boySprite, 'boy_transition_anim', () => {
+                this.playLoginAnim(this.boySprite, 'boy_chinese_anim');
             });
-
         } else {
-            this.boySprite.play('boy_galaxy_anim');
-            this.fitLoginSprite(this.boySprite);
-            this.girlSprite.play('girl_transition_anim');
-            this.fitLoginSprite(this.girlSprite);
-            this.girlSprite.once('animationcomplete', () => {
-                this.girlSprite.play('girl_chinese_anim');
-                this.fitLoginSprite(this.girlSprite);
+            this.playLoginAnim(this.boySprite, 'boy_galaxy_anim');
+            this.playLoginAnim(this.girlSprite, 'girl_transition_anim', () => {
+                this.playLoginAnim(this.girlSprite, 'girl_chinese_anim');
             });
         }
     }
@@ -326,47 +325,24 @@ export class LoginScene extends Phaser.Scene {
     }
 
     createAnimations() {
-        this.anims.create({
-            key: 'boy_galaxy_anim',
-            frames: this.anims.generateFrameNumbers('boy_galaxy', { start: 0, end: 15 }),
-            frameRate: 16,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'boy_chinese_anim',
-            frames: this.anims.generateFrameNumbers('boy_chinese', { start: 0, end: 15 }),
-            frameRate: 16,
-            repeat: -1
-        });
+        const createSheetAnim = (key, texture, end, frameRate, repeat) => {
+            if (this.anims.exists(key) || !this.textures.exists(texture)) return;
+            const tex = this.textures.get(texture);
+            if (!tex || tex.frameTotal <= 1) return;
+            this.anims.create({
+                key,
+                frames: this.anims.generateFrameNumbers(texture, { start: 0, end }),
+                frameRate,
+                repeat
+            });
+        };
 
-        this.anims.create({
-            key: 'boy_transition_anim',
-            frames: this.anims.generateFrameNumbers('boy_transition', { start: 0, end: 19 }),
-            frameRate: 16,
-            repeat: 0
-        });
-
-        this.anims.create({
-            key: 'girl_galaxy_anim',
-            frames: this.anims.generateFrameNumbers('girl_galaxy', { start: 0, end: 15 }),
-            frameRate: 16,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'girl_chinese_anim',
-            frames: this.anims.generateFrameNumbers('girl_chinese', { start: 0, end: 15 }),
-            frameRate: 16,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'girl_transition_anim',
-            frames: this.anims.generateFrameNumbers('girl_transition', { start: 0, end: 24 }),
-            frameRate: 16,
-            repeat: 0
-        });
-
+        createSheetAnim('boy_galaxy_anim', 'boy_galaxy', 15, 16, -1);
+        createSheetAnim('boy_chinese_anim', 'boy_chinese', 15, 16, -1);
+        createSheetAnim('boy_transition_anim', 'boy_transition', 19, 16, 0);
+        createSheetAnim('girl_galaxy_anim', 'girl_galaxy', 15, 16, -1);
+        createSheetAnim('girl_chinese_anim', 'girl_chinese', 15, 16, -1);
+        createSheetAnim('girl_transition_anim', 'girl_transition', 24, 16, 0);
 
         // NPC Animations are now created in MainStreetScene
     }

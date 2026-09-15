@@ -86,31 +86,19 @@ export class GameScene_7 extends BaseGameScene {
     setupGameObjects() {
         this.content = this.add.image(this.centerX, this.centerY, 'game7_border').setDepth(1);
 
+        // Blank centers on game7_border.png (1580x772), origin top-left of the scroll.
+        const slotAt = (localX, localY) => ({
+            x: this.content.x - this.content.width / 2 + localX,
+            y: this.content.y - this.content.height / 2 + localY
+        });
+
         this.targetContents = [
-            {
-                key: 'game7_answer1', fillKey: 'game7_fill_answer1'
-                , position: { x: this.centerX - 75, y: this.centerY - 250 }
-            },
-            {
-                key: 'game7_answer5', fillKey: 'game7_fill_answer5',
-                position: { x: this.centerX - 100, y: this.centerY - 100 }
-            },
-            {
-                key: 'game7_answer4', fillKey: 'game7_fill_answer4', position:
-                    { x: this.centerX + 60, y: this.centerY + 80 }
-            },
-            {
-                key: 'game7_answer6', fillKey: 'game7_fill_answer6', position:
-                    { x: this.centerX + 410, y: this.centerY - 100 }
-            },
-            {
-                key: 'game7_answer3', fillKey: 'game7_fill_answer3', position:
-                    { x: this.centerX + 200, y: this.centerY + 175 }
-            },
-            {
-                key: 'game7_answer2', fillKey: 'game7_fill_answer2', position:
-                    { x: this.centerX + 500, y: this.centerY + 175 }
-            },
+            { key: 'game7_answer1', fillKey: 'game7_fill_answer1', position: slotAt(716, 132.5) }, // 傷
+            { key: 'game7_answer5', fillKey: 'game7_fill_answer5', position: slotAt(689.5, 285) }, // 賓客
+            { key: 'game7_answer6', fillKey: 'game7_fill_answer6', position: slotAt(1207, 285) }, // 利
+            { key: 'game7_answer4', fillKey: 'game7_fill_answer4', position: slotAt(854, 469) }, // 泯然眾人
+            { key: 'game7_answer3', fillKey: 'game7_fill_answer3', position: slotAt(992.5, 556) }, // 材
+            { key: 'game7_answer2', fillKey: 'game7_fill_answer2', position: slotAt(1294, 556) }, // 卒之
         ];
 
         // --- 1. Create fill slots – select_area indicator only, hidden by default, no hint texture ---
