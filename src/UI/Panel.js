@@ -127,7 +127,7 @@ export class SettingPanel extends Phaser.GameObjects.Container {
         const settings = savedData ? JSON.parse(savedData) : { volume: 3, language: 'HK' };
 
         this.currentVolume = settings.volume;
-        this.currentLanguage = settings.language;
+        this.currentLanguage = settings.language === 'CN' ? 'CN' : 'HK';
         this.volumeCells = [];
 
         // 2. Build UI
@@ -158,9 +158,17 @@ export class SettingPanel extends Phaser.GameObjects.Container {
             this.volumeCells.push(cell);
         }
 
-        // Language Section
-        this.mandarinBtn = new CustomButton2(this.scene, -50, 50, 'lang_mandarin', 'lang_mandarin_click', () => this.setLanguage('CN'));
-        this.cantoneseBtn = new CustomButton2(this.scene, 300, 50, 'lang_cantonese', 'lang_cantonese_click', () => this.setLanguage('HK'));
+        // Language Section — radio: exactly one of Putonghua / Cantonese is always selected
+        this.mandarinBtn = new CustomButton2(
+            this.scene, -50, 50, 'lang_mandarin', 'lang_mandarin_click',
+            () => this.setLanguage('CN'),
+            () => this.setLanguage('CN')
+        );
+        this.cantoneseBtn = new CustomButton2(
+            this.scene, 300, 50, 'lang_cantonese', 'lang_cantonese_click',
+            () => this.setLanguage('HK'),
+            () => this.setLanguage('HK')
+        );
 
         this.mandarinBtn.needClicked = true;
         this.cantoneseBtn.needClicked = true;
@@ -195,8 +203,7 @@ export class SettingPanel extends Phaser.GameObjects.Container {
     }
 
     setLanguage(lang) {
-        if (this.currentLanguage === lang) return; // Skip if no change
-        this.currentLanguage = lang;
+        this.currentLanguage = (lang === 'CN') ? 'CN' : 'HK';
         this.refreshLanguageUI();
     }
 
@@ -215,7 +222,7 @@ export class SettingPanel extends Phaser.GameObjects.Container {
     saveToLocal() {
         const settings = {
             volume: this.currentVolume,
-            language: this.currentLanguage
+            language: this.currentLanguage === 'CN' ? 'CN' : 'HK'
         };
         localStorage.setItem('gameSettings', JSON.stringify(settings));
         this.hide();
