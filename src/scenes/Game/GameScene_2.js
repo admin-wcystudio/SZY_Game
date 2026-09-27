@@ -95,7 +95,7 @@ export class GameScene_2 extends BaseGameScene {
         this.createAnimations();
 
         // Movement settings
-        this.moveStep = 60;  // Pixels per move
+        this.moveStep = 58;  // Pixels per move
         this.isMoving = false;
 
         // Player start position
@@ -110,7 +110,7 @@ export class GameScene_2 extends BaseGameScene {
         this.initGame('game2_bg', 'game2_description', false, false, {
             targetRounds: 3,
             roundPerSeconds: 60,
-            isAllowRoundFail: true,
+            isAllowRoundFail: false,
             isContinuousTimer: true,
             sceneIndex: 2
         });
@@ -147,8 +147,9 @@ export class GameScene_2 extends BaseGameScene {
         this.idleAnimKey = `${this.genderKey}_idle_anim`;
         this.lastDirection = 'down';
 
+        this.playerScale = 1.5;
         this.player = this.add.sprite(this.playerStartX, this.playerStartY, `${this.genderKey}_idle`)
-            .setOrigin(0.5, 0.5).setDepth(2).setScale(2);
+            .setOrigin(0.5, 0.85).setDepth(2).setScale(this.playerScale);
         this.player.anims.play(this.idleAnimKey, true);
 
 
@@ -159,9 +160,7 @@ export class GameScene_2 extends BaseGameScene {
         this.placePens();
         this.createWallColliders();
 
-        // Debug: visualize player collision box (set to false to hide)
-        this.debugCollider = true;
-        this.debugGraphics = this.add.graphics().setDepth(999);
+        this.debugCollider = false;
 
     }
 
@@ -177,9 +176,9 @@ export class GameScene_2 extends BaseGameScene {
 
         // Interior walls
         this.createWall(800, 450, 290, 190, debugVisible, true);
-        this.createWall(this.centerX - 520, this.centerY + 130, 280, 250, debugVisible, true);
+        this.createWall(this.centerX - 520, this.centerY + 130, 260, 250, debugVisible, true);
         this.createWall(this.centerX - 430, this.centerY + 90, 400, 140, debugVisible, true);
-        this.createWall(this.centerX - 150, this.centerY + 330, 320, 150, debugVisible, true);
+        this.createWall(this.centerX - 145, this.centerY + 330, 310, 150, debugVisible, true);
         this.createWall(1000, 680, 320, 60, debugVisible, true);
         this.createWall(1050, 500, 750, 100, debugVisible, true);
         // Top-left / right grass/tree area
@@ -196,7 +195,7 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(1820, 780, 150, 120, debugVisible, true);
         this.createWall(1870, 350, 100, 980, debugVisible, true);
         this.createWall(900, 560, 140, 180, debugVisible, true);
-        this.createWall(1350, 600, 150, 330, debugVisible, true);
+        this.createWall(1340, 600, 150, 330, debugVisible, true);
         this.createWall(1620, 690, 240, 350, debugVisible, true);
         this.createWall(1650, 320, 280, 200, debugVisible, true);
 
@@ -242,7 +241,10 @@ export class GameScene_2 extends BaseGameScene {
         this.player.anims.stop();
         if (this.textures.exists(stopTexture)) {
             this.player.setTexture(stopTexture, 0);
+            this.player.setFrame(0);
         }
+        this.player.setScale(this.playerScale);
+        this.player.setOrigin(0.5, 0.85);
     }
 
     update() {
@@ -279,8 +281,11 @@ export class GameScene_2 extends BaseGameScene {
                 return;
         }
 
+        targetX = Phaser.Math.Clamp(targetX, 90, 1820);
+        targetY = Phaser.Math.Clamp(targetY, 250, 900);
+
         // Manual intersection check against walls using points instead of Arcade physics
-        if (this.wouldCollideWithWall(targetX - 20, targetY - 30)) {
+        if (this.wouldCollideWithWall(targetX, targetY)) {
             this.playStopPose();
             return;
         }
@@ -312,10 +317,13 @@ export class GameScene_2 extends BaseGameScene {
     }
 
     wouldCollideWithWall(x, y) {
-        const hitBBoxSize = 20;
-        // Offset down to the character's feet (sprite is 105px * scale 2 = 210px tall, feet ~90px below center)
-        const feetY = y + 90;
-        const playerRect = new Phaser.Geom.Rectangle(x - hitBBoxSize / 2, feetY - hitBBoxSize / 2, hitBBoxSize, hitBBoxSize);
+        const hitBBoxSize = 15;
+        const playerRect = new Phaser.Geom.Rectangle(
+            x - hitBBoxSize / 2,
+            y - hitBBoxSize / 2,
+            hitBBoxSize,
+            hitBBoxSize
+        );
 
         let colliding = false;
         for (const wall of this.wallRects) {
@@ -343,7 +351,7 @@ export class GameScene_2 extends BaseGameScene {
         if (!this.player || !item?.visible || item.collected) return false;
         const hitSize = 36;
         const feetX = this.player.x;
-        const feetY = this.player.y + 40;
+        const feetY = this.player.y;
         const playerBounds = new Phaser.Geom.Rectangle(
             feetX - hitSize / 2,
             feetY - hitSize / 2,
@@ -360,8 +368,10 @@ export class GameScene_2 extends BaseGameScene {
             if (this.isOverlappingItem(coin)) {
                 coin.collected = true;
                 coin.setVisible(false);
-                this.lives--;
-                console.log(`[GameScene_2] Coin hit! Lives: ${this.lives}`);
+                this.tweens.killTweensOf(this.player);
+                this.isMoving = false;
+                this.heldDirection = null;
+                console.log('[GameScene_2] Coin hit — restart from the beginning');
                 this.handleLose();
                 return;
             }
@@ -544,13 +554,13 @@ export class GameScene_2 extends BaseGameScene {
         const animFrames = this.gender === 'M' ? {
             idle: { start: 0, end: 0 },
             backstop: { start: 0, end: 0 },
-            backwalking: { start: 0 },
+            backwalking: { start: 0, end: 16 },
             frontstop: { start: 0, end: 0 },
-            frontwalking: { start: 0 },
+            frontwalking: { start: 0, end: 12 },
             leftstop: { start: 0, end: 0 },
-            leftwalking: { start: 0 },
+            leftwalking: { start: 0, end: 11 },
             rightstop: { start: 0, end: 0 },
-            rightwalking: { start: 0 }
+            rightwalking: { start: 0, end: 11 }
         } : {
             idle: { start: 0, end: 0 },
             backstop: { start: 0, end: 0 },
