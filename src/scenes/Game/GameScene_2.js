@@ -178,8 +178,8 @@ export class GameScene_2 extends BaseGameScene {
         // Outer boundary walls
         this.createWall(this.centerX, 180, 2300, 210, debugVisible, true);
         this.createWall(this.centerX + 460, 250, 800, 170, debugVisible, true);
-        this.createWall(this.centerX - 430, this.centerY + 450, 1100, 180, debugVisible, true);
-        this.createWall(this.centerX + 470, this.centerY + 450, 1000, 180, debugVisible, true);
+        this.createWall(this.centerX - 430, this.centerY + 420, 1100, 180, debugVisible, true);
+        this.createWall(this.centerX + 470, this.centerY + 420, 1000, 190, debugVisible, true);
         // Interior walls
         this.createWall(800 - 5, 460, 260, 190, debugVisible, true);
         this.createWall(this.centerX - 520, this.centerY + 130, 250, 240, debugVisible, true);
@@ -203,7 +203,8 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(400, 320, 150, 100, debugVisible, true);
         this.createWall(450, 420, 260, 100, debugVisible, true);
 
-        this.createWall(1090, 850, 160, 120, debugVisible, true);
+        //character
+        this.createWall(1100, 850, 100, 120, debugVisible, true);
         this.createWall(1820, 780, 150, 120, debugVisible, true);
         this.createWall(1870, 350, 100, 980, debugVisible, true);
         this.createWall(900, 560, 140, 180, debugVisible, true);
