@@ -21,8 +21,10 @@ export class GameScene_2 extends BaseGameScene {
         this.load.image('game2_npc_box_tryagain', `${path}game2_npc_box5.png`);
         VoiceOverHelper.preload(this);
         VoiceOverHelper.preloadImages(this, VoiceOverHelper.inGameImageKeys(2));
-        this.load.image('pen', `${path}game2_mazeobject1.png`);
-        this.load.image('coin', `${path}game2_mazeobject2.png`);
+        for (let i = 1; i <= 3; i++) {
+            this.load.image(`game2_success_object${i}`, `${path}game2_mazeobject1.png`);
+            this.load.image(`game2_fail_object${i}`, `${path}game2_mazeobject2.png`);
+        }
 
         this.load.image('up_btn', `${path}game2_up_button.png`);
         this.load.image('up_btn_click', `${path}game2_up_button_click.png`);
@@ -103,7 +105,7 @@ export class GameScene_2 extends BaseGameScene {
         this.isMoving = false;
 
         // Player start position
-        this.playerStartX = this.centerX;
+        this.playerStartX = this.centerX + 50;
         this.playerStartY = 750;
 
         // Item tracking
@@ -172,13 +174,12 @@ export class GameScene_2 extends BaseGameScene {
     createWallColliders() {
         this.wallRects = [];
 
-        const debugVisible = false;
+        const debugVisible =  true;
         // Outer boundary walls
         this.createWall(this.centerX, 180, 2300, 210, debugVisible, true);
         this.createWall(this.centerX + 460, 250, 800, 170, debugVisible, true);
-        this.createWall(this.centerX - 260, this.centerY + 455, 1000, 240, debugVisible, true);
-        this.createWall(this.centerX + 550, this.centerY + 430, 500, 210, debugVisible, true);
-
+        this.createWall(this.centerX - 430, this.centerY + 450, 1100, 180, debugVisible, true);
+        this.createWall(this.centerX + 470, this.centerY + 450, 1000, 180, debugVisible, true);
         // Interior walls
         this.createWall(800 - 5, 460, 260, 190, debugVisible, true);
         this.createWall(this.centerX - 520, this.centerY + 130, 250, 240, debugVisible, true);
@@ -207,7 +208,7 @@ export class GameScene_2 extends BaseGameScene {
         this.createWall(1870, 350, 100, 980, debugVisible, true);
         this.createWall(900, 560, 140, 180, debugVisible, true);
 
-        this.createWall(1340, 600, 170, 330, debugVisible, true);
+        this.createWall(1345, 600, 170, 330, debugVisible, true);
         this.createWall(1620, 690, 210, 350, debugVisible, true);
         this.createWall(1650, 320, 280, 200, debugVisible, true);
 
@@ -257,6 +258,8 @@ moveDirection(direction) {
                 break;
         }
 
+        targetY = Math.min(targetY, 900);
+
         // Manual intersection check against walls using points instead of Arcade physics
         if (this.wouldCollideWithWall(targetX, targetY)) {
             //   console.log('[GameScene_4] Blocked by wall!');
@@ -275,18 +278,24 @@ moveDirection(direction) {
             y: targetY,
             duration: 250,
             ease: 'Linear',
+            onUpdate: () => {
+                this.checkFailCollision();
+                this.checkSuccessCollection();
+            },
             onComplete: () => {
                 this.isMoving = false;
                 this.player.anims.play(stopAnimKey, true);
-
+                this.checkFailCollision();
+                this.checkSuccessCollection();
             }
         });
     }
 
     wouldCollideWithWall(x, y) {
         const bw = 30, bh = 20;
-        // Feet area: centered horizontally on player, 60px below player origin
-        const feetY = y + 70;
+        // Feet sit 70px below the sprite. Cap that probe so the player can reach y=900
+        // before the original bottom walls reject the step.
+        const feetY = Math.min(y + 70, 860);
         const playerRect = new Phaser.Geom.Rectangle(x - bw / 2, feetY - bh / 2, bw, bh);
 
         for (const wall of this.wallRects) {
