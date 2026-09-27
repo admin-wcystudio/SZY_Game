@@ -174,7 +174,7 @@ export class GameScene_2 extends BaseGameScene {
     createWallColliders() {
         this.wallRects = [];
 
-        const debugVisible =  true;
+        const debugVisible =  false;
         // Outer boundary walls
         this.createWall(this.centerX, 180, 2300, 210, debugVisible, true);
         this.createWall(this.centerX + 460, 250, 800, 170, debugVisible, true);
@@ -482,20 +482,6 @@ moveDirection(direction) {
         this.showBubble('win');
     }
 
-    onWinBubbleClose() {
-        const centerX = this.cameras.main.width / 2;
-        const centerY = this.cameras.main.height * 0.8;
-
-        this.win_02 = this.add.image(centerX, centerY, 'game2_npc_box_win_01')
-            .setInteractive({ useHandCursor: true }).setDepth(566).setVisible(true);
-        VoiceOverHelper.playBubbleVo(this, 'game2_npc_box_win_01');
-        this.win_02.once('pointerdown', () => {
-            VoiceOverHelper.stop(this);
-            this.win_02.destroy();
-            this.win_02 = null;
-            super.onWinBubbleClose();
-        });
-    }
 
     showWin() {
         this.showObjectPanel();
@@ -511,19 +497,6 @@ moveDirection(direction) {
         objectPanel.setDepth(1000);
         objectPanel.show();
         objectPanel.setCloseCallBack(() => GameManager.backToMainStreet(this));
-    }
-
-    onLoseBubbleClose() {
-        const centerX = this.cameras.main.width / 2;
-        const centerY = this.cameras.main.height * 0.8;
-        this.lose_01 = this.add.image(centerX, centerY, 'game2_npc_box_tryagain_01')
-            .setInteractive({ useHandCursor: true }).setDepth(566).setVisible(true);
-
-        this.lose_01.on('pointerdown', () => {
-            this.lose_01.destroy();
-            this.lose_01 = null;
-            super.onLoseBubbleClose();
-        });
     }
 
 
