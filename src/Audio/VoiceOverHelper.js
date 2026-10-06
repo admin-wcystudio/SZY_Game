@@ -275,7 +275,7 @@ export default class VoiceOverHelper {
         if (gameConfig.isTesting) return true;
         const results = GameManager.loadGameResult();
         const needed = gameId === 5 ? [4]
-            : gameId === 6 ? [1]
+            : gameId === 6 ? [1, 5]
                 : gameId === 7 ? [2, 3, 6]
                     : [];
         return needed.every((n) => {
