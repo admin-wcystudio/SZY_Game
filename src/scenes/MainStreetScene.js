@@ -155,6 +155,7 @@ export class MainStreetScene extends Phaser.Scene {
     }
 
     create() {
+        GameManager.startSessionClock();
         // Create NPC animations
         this.createAnimations();
         VoiceOverHelper.ensureBgm(this);
